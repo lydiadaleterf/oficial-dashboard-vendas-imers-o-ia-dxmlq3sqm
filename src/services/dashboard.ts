@@ -114,7 +114,7 @@ export const fetchDashboardData = async (
           .select('status_agendamento, nome, email')
           .order('data_agendamento', { ascending: false }),
       ),
-      supabase.from('funil_skip_vs_lancamento_interno').select('*'),
+      applyFF(supabase.from('funil_skip_vs_lancamento_interno').select('*')),
       applyFF(
         supabase
           .from('entradas_sem_vaga_hubspot')
@@ -146,6 +146,9 @@ export const fetchDashboardData = async (
   ) {
     isPartial = true
   }
+
+  console.debug('=== RAW funil_skip_vs_lancamento_interno ===', JSON.stringify(funilRes.data))
+  console.debug('=== RAW dashboard_diario_imersao (filtrado) ===', JSON.stringify(diarioRes.data))
 
   console.debug('[Dashboard] selectedFunnels:', selectedFunnels)
   console.debug('[Dashboard] diario rows count:', diarioRes.data?.length ?? 0)

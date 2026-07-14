@@ -14,7 +14,10 @@ export const useDashboardData = (selectedFunnels: FunnelSelection = []) => {
       const requestId = ++requestIdRef.current
 
       if (isRefresh) setRefreshing(true)
-      else setLoading(true)
+      else {
+        setData(null)
+        setLoading(true)
+      }
 
       setError(null)
 
