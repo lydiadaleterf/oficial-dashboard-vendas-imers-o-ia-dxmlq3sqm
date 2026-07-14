@@ -80,10 +80,18 @@ export interface DashboardData {
   isPartial: boolean
 }
 
+function withFunnelFilter(query: any, funnelNames: string[] | null): any {
+  if (funnelNames && funnelNames.length > 0) {
+    return query.in('funil', funnelNames)
+  }
+  return query
+}
+
 const isRefundStatus = (status: string) => status.includes('reembol') || status.includes('refund')
 
-export const fetchDashboardData = async (): Promise<DashboardData> => {
+export const fetchDashboardData = async (funnelNames?: string[] | null): Promise<DashboardData> => {
   let isPartial = false
+  const filter = funnelNames && funnelNames.length > 0 ? funnelNames : null
 
   const [
     diarioRes,
@@ -94,25 +102,34 @@ export const fetchDashboardData = async (): Promise<DashboardData> => {
     transacoesRes,
     skipDiarioRes,
   ] = await Promise.all([
-    supabase.from('dashboard_diario_imersao').select('*').order('dia', { ascending: true }),
-    supabase
-      .from('vagas_fechadas_agendamento')
-      .select('status_agendamento, nome, email')
-      .order('data_agendamento', { ascending: false }),
+    withFunnelFilter(supabase.from('dashboard_diario_imersao').select('*'), filter).order('dia', {
+      ascending: true,
+    }),
+    withFunnelFilter(
+      supabase.from('vagas_fechadas_agendamento').select('status_agendamento, nome, email'),
+      filter,
+    ).order('data_agendamento', { ascending: false }),
     supabase.from('funil_skip_vs_lancamento_interno').select('*'),
-    supabase
-      .from('entradas_sem_vaga_hubspot')
-      .select('nome, email, dt_entrada, link_hubspot, dealstage_nome')
+    withFunnelFilter(
+      supabase
+        .from('entradas_sem_vaga_hubspot')
+        .select('nome, email, dt_entrada, link_hubspot, dealstage_nome'),
+      filter,
+    )
       .order('dt_entrada', { ascending: false })
       .limit(50),
-    supabase
-      .from('vendas_vendedor_diario_imersao')
-      .select('dia, vendedor, vendas')
+    withFunnelFilter(
+      supabase.from('vendas_vendedor_diario_imersao').select('dia, vendedor, vendas'),
+      filter,
+    )
       .order('dia', { ascending: false })
       .limit(100),
-    supabase
-      .from('transacoes_imersao_detalhado')
-      .select('valor_pago, oferta, status, estado, is_vaga_fechada, email'),
+    withFunnelFilter(
+      supabase
+        .from('transacoes_imersao_detalhado')
+        .select('valor_pago, oferta, status, estado, is_vaga_fechada, email'),
+      filter,
+    ),
     supabase
       .from('funil_skip_imersao_diario')
       .select('dia, vendas_skip, vendas_entrada')
@@ -200,14 +217,8 @@ export const fetchDashboardData = async (): Promise<DashboardData> => {
   if (skipDailyData.length > 0) {
     const skipFunnel = funnels.find((f) => f.nome.toLowerCase().includes('skip'))
     if (skipFunnel) {
-      skipFunnel.vendaProduto1 = skipDailyData.reduce(
-        (sum, r) => sum + Number(r.vendas_skip || 0),
-        0,
-      )
-      skipFunnel.vendaEntrada = skipDailyData.reduce(
-        (sum, r) => sum + Number(r.vendas_entrada || 0),
-        0,
-      )
+      skipFunnel.vendaProduto1 = skipDailyData.reduce((s, r) => s + Number(r.vendas_skip || 0), 0)
+      skipFunnel.vendaEntrada = skipDailyData.reduce((s, r) => s + Number(r.vendas_entrada || 0), 0)
     }
   }
 

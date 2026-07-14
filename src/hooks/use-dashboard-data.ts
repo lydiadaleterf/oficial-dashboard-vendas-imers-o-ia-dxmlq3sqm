@@ -1,29 +1,39 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { DashboardData, fetchDashboardData } from '@/services/dashboard'
 
-export const useDashboardData = () => {
+export const useDashboardData = (funnelNames?: string[] | null) => {
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState<boolean>(true)
   const [refreshing, setRefreshing] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
+  const requestIdRef = useRef(0)
 
-  const loadData = useCallback(async (isRefresh = false) => {
-    if (isRefresh) setRefreshing(true)
-    else setLoading(true)
+  const loadData = useCallback(
+    async (isRefresh = false) => {
+      const requestId = ++requestIdRef.current
 
-    setError(null)
+      if (isRefresh) setRefreshing(true)
+      else setLoading(true)
 
-    try {
-      const result = await fetchDashboardData()
-      setData(result)
-    } catch (err) {
-      console.error('Error fetching dashboard data:', err)
-      setError('Falha ao carregar os dados do dashboard.')
-    } finally {
-      setLoading(false)
-      setRefreshing(false)
-    }
-  }, [])
+      setError(null)
+
+      try {
+        const result = await fetchDashboardData(funnelNames)
+        if (requestId !== requestIdRef.current) return
+        setData(result)
+      } catch (err) {
+        if (requestId !== requestIdRef.current) return
+        console.error('Error fetching dashboard data:', err)
+        setError('Falha ao carregar os dados do dashboard.')
+      } finally {
+        if (requestId === requestIdRef.current) {
+          setLoading(false)
+          setRefreshing(false)
+        }
+      }
+    },
+    [funnelNames],
+  )
 
   useEffect(() => {
     loadData()

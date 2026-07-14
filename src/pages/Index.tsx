@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { useDashboardData } from '@/hooks/use-dashboard-data'
 import { FunnelFilter } from '@/components/dashboard/FunnelFilter'
 import { KPICards } from '@/components/dashboard/KPICards'
@@ -6,14 +6,23 @@ import { PaymentMethodsCard } from '@/components/dashboard/PaymentMethodsCard'
 import { FunnelSection } from '@/components/dashboard/FunnelSection'
 import { ChartsSection } from '@/components/dashboard/ChartsSection'
 import { TablesSection } from '@/components/dashboard/TablesSection'
+import { DrillDownDialog } from '@/components/dashboard/DrillDownDialog'
 import { Button } from '@/components/ui/button'
 import { RefreshCw, AlertTriangle } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
+import { DrillDownType, DrillDownResult, fetchDrillDownData } from '@/services/drill-down'
+
+interface DrillDownState {
+  type: DrillDownType
+  data: DrillDownResult | null
+  loading: boolean
+}
 
 export default function Index() {
   const { data, loading, refreshing, error, refresh } = useDashboardData()
   const [selectedFunnelNames, setSelectedFunnelNames] = useState<string[] | null>(null)
+  const [drillDown, setDrillDown] = useState<DrillDownState | null>(null)
 
   const availableFunnels = useMemo(() => data?.funnels.map((f) => f.nome) ?? [], [data])
   const effectiveSelection = selectedFunnelNames ?? availableFunnels
@@ -21,6 +30,7 @@ export default function Index() {
     () => data?.funnels.filter((f) => effectiveSelection.includes(f.nome)) ?? [],
     [data, effectiveSelection],
   )
+
   const toggleFunnel = (name: string) => {
     setSelectedFunnelNames((prev) => {
       const current = prev ?? availableFunnels
@@ -31,6 +41,20 @@ export default function Index() {
       return [...current, name]
     })
   }
+
+  const handleCardClick = useCallback(
+    async (type: DrillDownType) => {
+      setDrillDown({ type, data: null, loading: true })
+      try {
+        const result = await fetchDrillDownData(type, selectedFunnelNames)
+        setDrillDown({ type, data: result, loading: false })
+      } catch (err) {
+        console.error('Error fetching drill-down data:', err)
+        setDrillDown({ type, data: null, loading: false })
+      }
+    },
+    [selectedFunnelNames],
+  )
 
   if (loading && !data) {
     return (
@@ -71,7 +95,7 @@ export default function Index() {
 
   return (
     <div className="pb-10">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Visão Geral do Funil</h1>
           <p className="text-slate-500 text-sm">Métricas atualizadas em tempo real.</p>
@@ -88,6 +112,14 @@ export default function Index() {
         </Button>
       </div>
 
+      <div className="sticky top-[96px] z-20 -mx-4 lg:-mx-8 px-4 lg:px-8 py-3 bg-slate-50/95 backdrop-blur border-b border-slate-200 mb-6">
+        <FunnelFilter
+          available={availableFunnels}
+          selected={effectiveSelection}
+          onToggle={toggleFunnel}
+        />
+      </div>
+
       {data.isPartial && (
         <Alert className="mb-6 bg-amber-50 text-amber-800 border-amber-200">
           <AlertTriangle className="h-4 w-4 text-amber-600" />
@@ -100,17 +132,25 @@ export default function Index() {
       )}
 
       <div className="animate-fade-in">
-        <KPICards data={data.kpis} />
-        <PaymentMethodsCard methods={data.paymentMethods} refunds={data.refunds} />
-        <FunnelFilter
-          available={availableFunnels}
-          selected={effectiveSelection}
-          onToggle={toggleFunnel}
+        <KPICards data={data.kpis} onCardClick={handleCardClick} />
+        <PaymentMethodsCard
+          methods={data.paymentMethods}
+          refunds={data.refunds}
+          onRefundsClick={() => handleCardClick('reembolsos')}
         />
         <FunnelSection funnels={filteredFunnels} />
         <ChartsSection data={data.chartData} geoData={data.geoData} />
         <TablesSection data={data} />
       </div>
+
+      <DrillDownDialog
+        open={drillDown !== null}
+        onOpenChange={(open) => !open && setDrillDown(null)}
+        title={drillDown?.data?.title ?? ''}
+        columns={drillDown?.data?.columns ?? []}
+        records={drillDown?.data?.records ?? []}
+        loading={drillDown?.loading ?? false}
+      />
     </div>
   )
 }

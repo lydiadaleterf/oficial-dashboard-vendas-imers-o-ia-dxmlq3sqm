@@ -7,9 +7,10 @@ import { cn } from '@/lib/utils'
 interface PaymentMethodsCardProps {
   methods: PaymentMethodData
   refunds: RefundData
+  onRefundsClick?: () => void
 }
 
-export function PaymentMethodsCard({ methods, refunds }: PaymentMethodsCardProps) {
+export function PaymentMethodsCard({ methods, refunds, onRefundsClick }: PaymentMethodsCardProps) {
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -76,7 +77,14 @@ export function PaymentMethodsCard({ methods, refunds }: PaymentMethodsCardProps
         </CardContent>
       </Card>
 
-      <Card className={cn('shadow-subtle', refunds.count > 0 ? 'border-red-200 bg-red-50/30' : '')}>
+      <Card
+        className={cn(
+          'shadow-subtle transition-all',
+          refunds.count > 0 ? 'border-red-200 bg-red-50/30' : '',
+          onRefundsClick && 'cursor-pointer hover:shadow-md',
+        )}
+        onClick={onRefundsClick}
+      >
         <CardHeader className="pb-2">
           <CardTitle className="text-lg font-semibold text-slate-800 flex items-center gap-2">
             <RotateCcw className="w-5 h-5 text-red-500" />

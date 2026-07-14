@@ -1,13 +1,15 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { KPIData } from '@/services/dashboard'
+import { DrillDownType } from '@/services/drill-down'
 import { CheckCircle, DollarSign, AlertCircle, CalendarClock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface KPICardsProps {
   data: KPIData
+  onCardClick: (type: DrillDownType) => void
 }
 
-export function KPICards({ data }: KPICardsProps) {
+export function KPICards({ data, onCardClick }: KPICardsProps) {
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -19,7 +21,10 @@ export function KPICards({ data }: KPICardsProps) {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      <Card className="shadow-subtle hover:shadow-md transition-shadow border-t-4 border-t-teal-500">
+      <Card
+        className="shadow-subtle hover:shadow-md transition-all border-t-4 border-t-teal-500 cursor-pointer hover:border-t-teal-600 animate-fade-in-up"
+        onClick={() => onCardClick('vagas-fechadas')}
+      >
         <CardContent className="p-4 flex flex-col justify-between h-full">
           <div className="flex justify-between items-start mb-2">
             <p className="text-sm font-medium text-slate-500">Vagas Fechadas</p>
@@ -27,13 +32,17 @@ export function KPICards({ data }: KPICardsProps) {
               <CheckCircle className="w-4 h-4 text-teal-600" />
             </div>
           </div>
-          <h2 className="text-3xl font-bold tracking-tight text-slate-800 animate-fade-in-up">
+          <h2 className="text-3xl font-bold tracking-tight text-slate-800">
             {data.vagasFechadas.toLocaleString('pt-BR')}
           </h2>
         </CardContent>
       </Card>
 
-      <Card className="shadow-subtle hover:shadow-md transition-shadow">
+      <Card
+        className="shadow-subtle hover:shadow-md transition-all cursor-pointer hover:border-emerald-400 animate-fade-in-up"
+        style={{ animationDelay: '50ms' }}
+        onClick={() => onCardClick('receita')}
+      >
         <CardContent className="p-4 flex flex-col justify-between h-full">
           <div className="flex justify-between items-start mb-2">
             <p className="text-sm font-medium text-slate-500">Receita Total</p>
@@ -41,16 +50,17 @@ export function KPICards({ data }: KPICardsProps) {
               <DollarSign className="w-4 h-4 text-emerald-600" />
             </div>
           </div>
-          <h2
-            className="text-3xl font-bold tracking-tight text-slate-800 animate-fade-in-up"
-            style={{ animationDelay: '50ms' }}
-          >
+          <h2 className="text-3xl font-bold tracking-tight text-slate-800">
             {formatCurrency(data.receitaFechada)}
           </h2>
         </CardContent>
       </Card>
 
-      <Card className="shadow-subtle hover:shadow-md transition-shadow border-t-4 border-t-amber-500">
+      <Card
+        className="shadow-subtle hover:shadow-md transition-all border-t-4 border-t-amber-500 cursor-pointer hover:border-t-amber-600 animate-fade-in-up"
+        style={{ animationDelay: '100ms' }}
+        onClick={() => onCardClick('entradas-pendentes')}
+      >
         <CardContent className="p-4 flex flex-col justify-between h-full">
           <div className="flex justify-between items-start mb-2">
             <p className="text-sm font-medium text-slate-500">Entradas Pendentes</p>
@@ -58,10 +68,7 @@ export function KPICards({ data }: KPICardsProps) {
               <AlertCircle className="w-4 h-4 text-amber-600" />
             </div>
           </div>
-          <h2
-            className="text-3xl font-bold tracking-tight text-slate-800 animate-fade-in-up"
-            style={{ animationDelay: '100ms' }}
-          >
+          <h2 className="text-3xl font-bold tracking-tight text-slate-800">
             {data.entradasPendentes}
             <span className="text-base font-medium text-slate-400 ml-1">pendentes</span>
           </h2>
@@ -70,9 +77,10 @@ export function KPICards({ data }: KPICardsProps) {
 
       <Card
         className={cn(
-          'shadow-subtle hover:shadow-md transition-shadow border-t-4',
+          'shadow-subtle hover:shadow-md transition-shadow border-t-4 animate-fade-in-up',
           isAgendamentoAlert ? 'border-t-amber-500 bg-amber-50/30' : 'border-t-blue-500',
         )}
+        style={{ animationDelay: '150ms' }}
       >
         <CardContent className="p-4 flex flex-col justify-between h-full">
           <div className="flex justify-between items-start mb-2">
@@ -94,10 +102,9 @@ export function KPICards({ data }: KPICardsProps) {
           </div>
           <h2
             className={cn(
-              'text-3xl font-bold tracking-tight animate-fade-in-up',
+              'text-3xl font-bold tracking-tight',
               isAgendamentoAlert ? 'text-amber-600' : 'text-slate-800',
             )}
-            style={{ animationDelay: '150ms' }}
           >
             {data.taxaAgendamento.toFixed(1)}%
           </h2>
