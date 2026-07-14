@@ -28,6 +28,7 @@ export interface ChartDataPoint {
   dia: string
   entradas_realizadas: number
   vagas_fechadas: number
+  receita_fechada: number
 }
 
 export interface PaymentMethodData {
@@ -141,6 +142,7 @@ export const fetchDashboardData = async (): Promise<DashboardData> => {
       dia: row.dia,
       entradas_realizadas: Number(row.entradas_realizadas || 0),
       vagas_fechadas: Number(row.vagas_fechadas || 0),
+      receita_fechada: Number(row.receita_fechada || 0),
     })
   })
 
