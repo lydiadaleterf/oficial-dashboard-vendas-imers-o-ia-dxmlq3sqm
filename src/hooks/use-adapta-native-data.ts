@@ -1,27 +1,22 @@
 import { useState, useEffect, useCallback } from 'react'
-import { AdaptaNativeData, fetchAdaptaNativeData } from '@/services/adapta-native'
+import { fetchAdaptaNativeData, AdaptaNativeData } from '@/services/adapta-native'
 
 export const useAdaptaNativeData = () => {
   const [data, setData] = useState<AdaptaNativeData | null>(null)
-  const [loading, setLoading] = useState<boolean>(true)
-  const [refreshing, setRefreshing] = useState<boolean>(false)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const loadData = useCallback(async (isRefresh = false) => {
-    if (isRefresh) setRefreshing(true)
-    else setLoading(true)
-
+  const loadData = useCallback(async () => {
+    setLoading(true)
     setError(null)
-
     try {
       const result = await fetchAdaptaNativeData()
       setData(result)
     } catch (err) {
-      console.error('Error fetching Adapta Native data:', err)
-      setError('Falha ao carregar os dados.')
+      console.error('Error fetching adapta native data:', err)
+      setError('Falha ao carregar dados do Adapta.')
     } finally {
       setLoading(false)
-      setRefreshing(false)
     }
   }, [])
 
@@ -29,5 +24,5 @@ export const useAdaptaNativeData = () => {
     loadData()
   }, [loadData])
 
-  return { data, loading, refreshing, error, refresh: () => loadData(true) }
+  return { data, loading, error, refresh: loadData }
 }

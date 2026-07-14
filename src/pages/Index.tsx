@@ -1,139 +1,140 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState } from 'react'
+import { Navigate } from 'react-router-dom'
+import { useAuth } from '@/hooks/use-auth'
 import { useDashboardData } from '@/hooks/use-dashboard-data'
+import { useAdaptaNativeData } from '@/hooks/use-adapta-native-data'
 import { KPICards } from '@/components/dashboard/KPICards'
-import { PaymentMethodsCard } from '@/components/dashboard/PaymentMethodsCard'
 import { FunnelSection } from '@/components/dashboard/FunnelSection'
 import { ChartsSection } from '@/components/dashboard/ChartsSection'
 import { TablesSection } from '@/components/dashboard/TablesSection'
+import { PaymentMethodsCard } from '@/components/dashboard/PaymentMethodsCard'
+import { LeadsDistribution } from '@/components/dashboard/LeadsDistribution'
+import { LeadStageChart } from '@/components/dashboard/LeadStageChart'
 import { DrillDownDialog } from '@/components/dashboard/DrillDownDialog'
-import { FunnelFilter } from '@/components/dashboard/FunnelFilter'
-import { Button } from '@/components/ui/button'
+import { DrillDownType } from '@/services/drill-down'
 import { RefreshCw, AlertTriangle } from 'lucide-react'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { DrillDownType, DrillDownResult, fetchDrillDownData } from '@/services/drill-down'
+import { cn } from '@/lib/utils'
 
-interface DrillDownState {
-  type: DrillDownType
-  data: DrillDownResult | null
-  loading: boolean
+function LoadingSkeleton() {
+  return (
+    <div className="space-y-6 p-4 md:p-6 max-w-7xl mx-auto animate-pulse">
+      <Skeleton className="h-8 w-80" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-28 rounded-xl" />
+        ))}
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Skeleton className="h-72 rounded-xl" />
+        <Skeleton className="h-72 rounded-xl" />
+      </div>
+      <Skeleton className="h-80 rounded-xl" />
+    </div>
+  )
+}
+
+function ErrorState({ error, onRetry }: { error: string | null; onRetry: () => void }) {
+  return (
+    <div className="flex items-center justify-center min-h-[60vh] p-4">
+      <div className="text-center max-w-md">
+        <AlertTriangle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+        <h2 className="text-lg font-semibold text-slate-800 mb-2">Erro ao carregar dados</h2>
+        <p className="text-sm text-slate-500 mb-4">{error || 'Ocorreu um erro inesperado.'}</p>
+        <Button onClick={onRetry} variant="outline">
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Tentar novamente
+        </Button>
+      </div>
+    </div>
+  )
 }
 
 export default function Index() {
-  const [selectedFunnels, setSelectedFunnels] = useState<string[]>([])
-  const { data, loading, refreshing, error, refresh } = useDashboardData(selectedFunnels)
-  const [drillDown, setDrillDown] = useState<DrillDownState | null>(null)
+  const { user, loading: authLoading } = useAuth()
+  const { data, loading, refreshing, error, refresh } = useDashboardData([])
+  const { data: adaptaData } = useAdaptaNativeData()
+  const [drillDownType, setDrillDownType] = useState<DrillDownType | null>(null)
 
-  const availableFunnels = useMemo(() => (data?.funnels ?? []).map((f) => f.nome), [data])
-
-  const handleCardClick = useCallback(async (type: DrillDownType) => {
-    setDrillDown({ type, data: null, loading: true })
-    try {
-      const result = await fetchDrillDownData(type)
-      setDrillDown({ type, data: result, loading: false })
-    } catch (err) {
-      console.error('Error fetching drill-down data:', err)
-      setDrillDown({ type, data: null, loading: false })
-    }
-  }, [])
-
-  if (loading && !data) {
+  if (authLoading) {
     return (
-      <div className="space-y-6 animate-pulse">
-        <div className="flex justify-between items-center mb-6">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-10 w-32" />
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-32 w-full rounded-xl" />
-          ))}
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Skeleton className="h-80 w-full rounded-xl" />
-          <Skeleton className="h-80 w-full rounded-xl" />
-        </div>
+      <div className="flex items-center justify-center min-h-screen">
+        <Skeleton className="w-12 h-12 rounded-full" />
       </div>
     )
   }
 
-  if (error) {
-    return (
-      <Alert variant="destructive" className="max-w-2xl mx-auto mt-10">
-        <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>Erro</AlertTitle>
-        <AlertDescription className="flex flex-col gap-4">
-          {error}
-          <Button onClick={refresh} variant="outline" className="w-fit">
-            Tentar Novamente
-          </Button>
-        </AlertDescription>
-      </Alert>
-    )
+  if (!user) {
+    return <Navigate to="/login" replace />
   }
 
-  if (!data) return null
+  if (loading) {
+    return <LoadingSkeleton />
+  }
+
+  if (error || !data) {
+    return <ErrorState error={error} onRetry={refresh} />
+  }
 
   return (
-    <div className="pb-10">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+    <div className="space-y-2 p-4 md:p-6 max-w-7xl mx-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Visão Geral do Funil</h1>
-          <p className="text-slate-500 text-sm">Métricas atualizadas em tempo real.</p>
+          <h1 className="text-xl md:text-2xl font-bold text-slate-800">
+            Dashboard de Vendas — Imersão de IA para CEOs
+          </h1>
+          <p className="text-sm text-slate-500 mt-0.5">
+            Visão consolidada dos funis Skip e Lançamento Interno
+          </p>
         </div>
         <Button
-          onClick={refresh}
-          disabled={refreshing}
           variant="outline"
           size="sm"
-          className="gap-2 bg-white shadow-sm hover:bg-slate-50"
+          onClick={refresh}
+          disabled={refreshing}
+          className="shrink-0"
         >
-          <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-          {refreshing ? 'Atualizando...' : 'Atualizar Dados'}
+          <RefreshCw className={cn('w-4 h-4 mr-2', refreshing && 'animate-spin')} />
+          Atualizar
         </Button>
       </div>
 
-      {availableFunnels.length > 0 && (
-        <div className="mb-4">
-          <FunnelFilter
-            funnels={availableFunnels}
-            selected={selectedFunnels}
-            onChange={setSelectedFunnels}
-          />
+      {data.isPartial && (
+        <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-2 animate-fade-in">
+          <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+          <span className="text-sm text-amber-700">
+            Alguns dados podem estar incompletos devido a erros parciais na carga.
+          </span>
         </div>
       )}
 
-      {data.isPartial && (
-        <Alert className="mb-6 bg-amber-50 text-amber-800 border-amber-200">
-          <AlertTriangle className="h-4 w-4 text-amber-600" />
-          <AlertTitle>Aviso de Dados Parciais</AlertTitle>
-          <AlertDescription>
-            Não foi possível carregar todas as informações no momento. Alguns gráficos ou tabelas
-            podem estar incompletos.
-          </AlertDescription>
-        </Alert>
+      <KPICards data={data.kpis} onCardClick={setDrillDownType} />
+
+      <FunnelSection funnels={data.funnels} />
+
+      <PaymentMethodsCard
+        methods={data.paymentMethods}
+        refunds={data.refunds}
+        onRefundsClick={() => setDrillDownType('reembolsos')}
+      />
+
+      <ChartsSection data={data.chartData} geoData={data.geoData} />
+
+      <TablesSection data={data} />
+
+      {adaptaData && (
+        <>
+          <LeadStageChart data={adaptaData.leadsByDealStage} />
+          <LeadsDistribution
+            byOrigemPrimaria={adaptaData.leadsByOrigemPrimaria}
+            byOrigemSecundaria={adaptaData.leadsByOrigemSecundaria}
+            byUtmSource={adaptaData.leadsByUtmSource}
+          />
+        </>
       )}
 
-      <div className="animate-fade-in">
-        <KPICards data={data.kpis} onCardClick={handleCardClick} />
-        <PaymentMethodsCard
-          methods={data.paymentMethods}
-          refunds={data.refunds}
-          onRefundsClick={() => handleCardClick('reembolsos')}
-        />
-        <FunnelSection funnels={data.funnels} />
-        <ChartsSection data={data.chartData} geoData={data.geoData} />
-        <TablesSection data={data} />
-      </div>
-
-      <DrillDownDialog
-        open={drillDown !== null}
-        onOpenChange={(open) => !open && setDrillDown(null)}
-        title={drillDown?.data?.title ?? ''}
-        columns={drillDown?.data?.columns ?? []}
-        records={drillDown?.data?.records ?? []}
-        loading={drillDown?.loading ?? false}
-      />
+      <DrillDownDialog type={drillDownType} onClose={() => setDrillDownType(null)} />
     </div>
   )
 }
