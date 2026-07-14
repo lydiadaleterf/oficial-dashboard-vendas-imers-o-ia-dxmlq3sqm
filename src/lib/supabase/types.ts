@@ -13,18 +13,21 @@ export type Database = {
         Row: {
           dia: string
           entradas_realizadas: number | null
+          funil: string | null
           receita_fechada: number | null
           vagas_fechadas: number | null
         }
         Insert: {
           dia: string
           entradas_realizadas?: number | null
+          funil?: string | null
           receita_fechada?: number | null
           vagas_fechadas?: number | null
         }
         Update: {
           dia?: string
           entradas_realizadas?: number | null
+          funil?: string | null
           receita_fechada?: number | null
           vagas_fechadas?: number | null
         }
@@ -39,6 +42,7 @@ export type Database = {
           doc: string | null
           dt_entrada: string | null
           email: string
+          funil: string | null
           link_hubspot: string | null
           nome: string | null
         }
@@ -50,6 +54,7 @@ export type Database = {
           doc?: string | null
           dt_entrada?: string | null
           email: string
+          funil?: string | null
           link_hubspot?: string | null
           nome?: string | null
         }
@@ -61,6 +66,7 @@ export type Database = {
           doc?: string | null
           dt_entrada?: string | null
           email?: string
+          funil?: string | null
           link_hubspot?: string | null
           nome?: string | null
         }
@@ -352,6 +358,7 @@ export type Database = {
           doc: string | null
           email: string | null
           estado: string | null
+          funil: string | null
           is_vaga_fechada: boolean | null
           link_guru: string
           link_hubspot: string | null
@@ -366,6 +373,7 @@ export type Database = {
           doc?: string | null
           email?: string | null
           estado?: string | null
+          funil?: string | null
           is_vaga_fechada?: boolean | null
           link_guru: string
           link_hubspot?: string | null
@@ -380,6 +388,7 @@ export type Database = {
           doc?: string | null
           email?: string | null
           estado?: string | null
+          funil?: string | null
           is_vaga_fechada?: boolean | null
           link_guru?: string
           link_hubspot?: string | null
@@ -397,6 +406,7 @@ export type Database = {
           data_vaga_fechada: string | null
           doc: string | null
           email: string
+          funil: string | null
           link_guru: string | null
           nome: string | null
           status_agendamento: string | null
@@ -407,6 +417,7 @@ export type Database = {
           data_vaga_fechada?: string | null
           doc?: string | null
           email: string
+          funil?: string | null
           link_guru?: string | null
           nome?: string | null
           status_agendamento?: string | null
@@ -417,6 +428,7 @@ export type Database = {
           data_vaga_fechada?: string | null
           doc?: string | null
           email?: string
+          funil?: string | null
           link_guru?: string | null
           nome?: string | null
           status_agendamento?: string | null
@@ -426,16 +438,19 @@ export type Database = {
       vendas_vendedor_diario_imersao: {
         Row: {
           dia: string
+          funil: string | null
           vendas: number | null
           vendedor: string
         }
         Insert: {
           dia: string
+          funil?: string | null
           vendas?: number | null
           vendedor: string
         }
         Update: {
           dia?: string
+          funil?: string | null
           vendas?: number | null
           vendedor?: string
         }

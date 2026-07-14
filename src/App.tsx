@@ -3,7 +3,6 @@ import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import Index from './pages/Index'
-import Native from './pages/Native'
 import Login from './pages/Login'
 import NotFound from './pages/NotFound'
 import Layout from './components/Layout'
@@ -18,11 +17,9 @@ const App = () => (
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route element={<Layout />}>
-            <Route path="/" element={<Navigate to="/imersao-labs" replace />} />
-            <Route path="/imersao-labs" element={<Index />} />
-            <Route path="/native" element={<Native />} />
+            <Route path="/" element={<Index />} />
           </Route>
-          <Route path="*" element={<NotFound />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </TooltipProvider>
     </AuthProvider>
