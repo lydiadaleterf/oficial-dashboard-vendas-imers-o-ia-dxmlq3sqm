@@ -8,24 +8,42 @@ interface FunnelSectionProps {
   funnels: FunnelData[]
 }
 
+type TrapezoidDirection = 'narrow' | 'widen' | 'flat'
+
+function getDirection(current: number, next: number | null): TrapezoidDirection {
+  if (next === null) return 'flat'
+  if (next > current) return 'widen'
+  if (next < current) return 'narrow'
+  return 'flat'
+}
+
+const TRAPEZOID_CLASSES: Record<TrapezoidDirection, string> = {
+  narrow: 'funnel-trapezoid-narrow',
+  widen: 'funnel-trapezoid-widen',
+  flat: 'funnel-trapezoid-flat',
+}
+
 function FunnelStage({
   label,
   value,
   widthPct,
   color,
   delay,
+  direction,
 }: {
   label: string
   value: number
   widthPct: number
   color: string
   delay: number
+  direction: TrapezoidDirection
 }) {
   return (
     <div
       className={cn(
-        'rounded-md p-3 text-center shadow-sm transition-transform hover:scale-[1.02] duration-200 animate-fade-in-up',
+        'p-3 text-center shadow-sm transition-transform hover:scale-[1.02] duration-200 animate-fade-in-up',
         color,
+        TRAPEZOID_CLASSES[direction],
       )}
       style={{
         width: `${Math.max(widthPct, 30)}%`,
@@ -63,6 +81,52 @@ export function FunnelSection({ funnels }: FunnelSectionProps) {
         const maxVal = Math.max(funnel.vendaProduto1, funnel.vendaEntrada, funnel.vagasFechadas, 1)
         const isWidening = funnel.vagasFechadas > funnel.vendaEntrada
 
+        const stages: {
+          label: string
+          value: number
+          color: string
+          delay: number
+          direction: TrapezoidDirection
+        }[] = []
+
+        if (isSkip) {
+          stages.push({
+            label: 'Venda Skip',
+            value: funnel.vendaProduto1,
+            color: 'bg-slate-200 text-slate-700 border border-slate-300',
+            delay: 0,
+            direction: getDirection(funnel.vendaProduto1, funnel.vendaEntrada),
+          })
+          stages.push({
+            label: 'Entrada Imersão',
+            value: funnel.vendaEntrada,
+            color: 'bg-slate-100 text-slate-700 border border-slate-200',
+            delay: 50,
+            direction: getDirection(funnel.vendaEntrada, funnel.vagasFechadas),
+          })
+        } else {
+          stages.push({
+            label: 'Entrada',
+            value: funnel.vendaEntrada,
+            color: 'bg-slate-100 text-slate-700 border border-slate-200',
+            delay: 0,
+            direction: getDirection(funnel.vendaEntrada, funnel.vagasFechadas),
+          })
+        }
+
+        stages.push({
+          label: 'Vagas Garantidas',
+          value: funnel.vagasFechadas,
+          color: cn(
+            'text-teal-700 border',
+            isWidening
+              ? 'bg-teal-100 border-teal-300 ring-2 ring-teal-50'
+              : 'bg-teal-50 border-teal-100',
+          ),
+          delay: isSkip ? 100 : 50,
+          direction: 'flat',
+        })
+
         return (
           <Card key={funnel.nome} className="shadow-subtle border-slate-200">
             <CardHeader className="pb-2 border-b bg-slate-50/50">
@@ -72,50 +136,31 @@ export function FunnelSection({ funnels }: FunnelSectionProps) {
             </CardHeader>
             <CardContent className="p-6">
               <div className="flex flex-col items-center max-w-sm mx-auto space-y-1">
-                {isSkip && (
-                  <>
+                {stages.map((stage, idx) => (
+                  <div key={idx} className="w-full flex flex-col items-center">
+                    {idx > 0 && (
+                      <ConversionArrow
+                        pct={
+                          isSkip && idx === 1
+                            ? funnel.vendaProduto1 > 0
+                              ? Math.round((funnel.vendaEntrada / funnel.vendaProduto1) * 100)
+                              : 0
+                            : funnel.vendaEntrada > 0
+                              ? Math.round((funnel.vagasFechadas / funnel.vendaEntrada) * 100)
+                              : 0
+                        }
+                      />
+                    )}
                     <FunnelStage
-                      label="Venda Skip"
-                      value={funnel.vendaProduto1}
-                      widthPct={(funnel.vendaProduto1 / maxVal) * 100}
-                      color="bg-slate-200 text-slate-700 border border-slate-300"
-                      delay={0}
+                      label={stage.label}
+                      value={stage.value}
+                      widthPct={(stage.value / maxVal) * 100}
+                      color={stage.color}
+                      delay={stage.delay}
+                      direction={stage.direction}
                     />
-                    <ConversionArrow
-                      pct={
-                        funnel.vendaProduto1 > 0
-                          ? Math.round((funnel.vendaEntrada / funnel.vendaProduto1) * 100)
-                          : 0
-                      }
-                    />
-                  </>
-                )}
-                <FunnelStage
-                  label={isSkip ? 'Entrada Imersão' : 'Entrada'}
-                  value={funnel.vendaEntrada}
-                  widthPct={(funnel.vendaEntrada / maxVal) * 100}
-                  color="bg-slate-100 text-slate-700 border border-slate-200"
-                  delay={isSkip ? 50 : 0}
-                />
-                <ConversionArrow
-                  pct={
-                    funnel.vendaEntrada > 0
-                      ? Math.round((funnel.vagasFechadas / funnel.vendaEntrada) * 100)
-                      : 0
-                  }
-                />
-                <FunnelStage
-                  label="Vagas Garantidas"
-                  value={funnel.vagasFechadas}
-                  widthPct={(funnel.vagasFechadas / maxVal) * 100}
-                  color={cn(
-                    'text-teal-700 border',
-                    isWidening
-                      ? 'bg-teal-100 border-teal-300 ring-2 ring-teal-50'
-                      : 'bg-teal-50 border-teal-100',
-                  )}
-                  delay={isSkip ? 100 : 50}
-                />
+                  </div>
+                ))}
 
                 <div className="flex justify-center gap-3 mt-3 pt-3 border-t border-slate-100 w-full">
                   <div className="flex flex-col items-center">

@@ -119,4 +119,13 @@
   .animate-fade-in-up {
     animation: fade-in-up 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
   }
+  .funnel-trapezoid-narrow {
+    clip-path: polygon(0 0, 100% 0, 90% 100%, 10% 100%);
+  }
+  .funnel-trapezoid-widen {
+    clip-path: polygon(10% 0, 90% 0, 100% 100%, 0 100%);
+  }
+  .funnel-trapezoid-flat {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  }
 }
