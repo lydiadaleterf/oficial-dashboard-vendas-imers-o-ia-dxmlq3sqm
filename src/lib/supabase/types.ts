@@ -64,21 +64,21 @@ export type Database = {
         Row: {
           dia: string
           entradas_realizadas: number | null
-          funil: string | null
+          funil: string
           receita_fechada: number | null
           vagas_fechadas: number | null
         }
         Insert: {
           dia: string
           entradas_realizadas?: number | null
-          funil?: string | null
+          funil: string
           receita_fechada?: number | null
           vagas_fechadas?: number | null
         }
         Update: {
           dia?: string
           entradas_realizadas?: number | null
-          funil?: string | null
+          funil?: string
           receita_fechada?: number | null
           vagas_fechadas?: number | null
         }
@@ -489,19 +489,19 @@ export type Database = {
       vendas_vendedor_diario_imersao: {
         Row: {
           dia: string
-          funil: string | null
+          funil: string
           vendas: number | null
           vendedor: string
         }
         Insert: {
           dia: string
-          funil?: string | null
+          funil: string
           vendas?: number | null
           vendedor: string
         }
         Update: {
           dia?: string
-          funil?: string | null
+          funil?: string
           vendas?: number | null
           vendedor?: string
         }

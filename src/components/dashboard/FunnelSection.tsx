@@ -3,6 +3,7 @@ import { FunnelData } from '@/services/dashboard'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { ArrowDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { getFunnelLabel } from '@/lib/funnel-labels'
 
 interface FunnelSectionProps {
   funnels: FunnelData[]
@@ -131,7 +132,7 @@ export function FunnelSection({ funnels }: FunnelSectionProps) {
           <Card key={funnel.nome} className="shadow-subtle border-slate-200">
             <CardHeader className="pb-2 border-b bg-slate-50/50">
               <CardTitle className="text-lg font-semibold text-slate-800 uppercase tracking-wide">
-                Funil: {funnel.nome}
+                Funil: {getFunnelLabel(funnel.nome)}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">

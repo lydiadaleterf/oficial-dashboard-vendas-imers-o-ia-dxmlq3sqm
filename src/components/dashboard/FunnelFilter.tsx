@@ -1,16 +1,11 @@
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { Filter } from 'lucide-react'
+import { FUNNEL_OPTIONS } from '@/lib/funnel-labels'
 
 interface FunnelFilterProps {
   selected: string[]
   onChange: (selected: string[]) => void
 }
-
-const FUNNEL_OPTIONS = [
-  { label: 'Todos', value: 'all' },
-  { label: 'Skip', value: 'Skip' },
-  { label: 'Lançamento Interno', value: 'Lançamento Interno' },
-]
 
 export function FunnelFilter({ selected, onChange }: FunnelFilterProps) {
   const currentValue = selected.length === 0 ? 'all' : selected[0]
