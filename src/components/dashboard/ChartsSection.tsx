@@ -46,6 +46,17 @@ export function ChartsSection({ data, geoData }: ChartsSectionProps) {
       maximumFractionDigits: 0,
     }).format(value)
 
+  const formatCurrencyLabel = (value: number) => {
+    if (value >= 100000) return `R$ ${(value / 1000).toFixed(0)}k`
+    if (value >= 10000) return `R$ ${(value / 1000).toFixed(1)}k`
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value)
+  }
+
   const tooltipStyle = {
     borderRadius: '8px',
     border: '1px solid #e2e8f0',
@@ -133,7 +144,7 @@ export function ChartsSection({ data, geoData }: ChartsSectionProps) {
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto mt-4 pb-2">
-            <div style={{ width: chartWidth, height: 320 }}>
+            <div style={{ width: chartWidth, height: 340 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={allData} margin={{ top: 20, right: 10, left: 0, bottom: 60 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
@@ -165,7 +176,15 @@ export function ChartsSection({ data, geoData }: ChartsSectionProps) {
                     fill={TEAL_COLOR}
                     radius={[4, 4, 0, 0]}
                     maxBarSize={40}
-                  />
+                  >
+                    <LabelList
+                      dataKey="receita_fechada"
+                      position="top"
+                      fill={TEAL_DARK}
+                      fontSize={10}
+                      formatter={(value: number) => (value > 0 ? formatCurrencyLabel(value) : '')}
+                    />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
