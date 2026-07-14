@@ -7,7 +7,6 @@ import { KPICards } from '@/components/dashboard/KPICards'
 import { FunnelSection } from '@/components/dashboard/FunnelSection'
 import { ChartsSection } from '@/components/dashboard/ChartsSection'
 import { TablesSection } from '@/components/dashboard/TablesSection'
-import { PaymentMethodsCard } from '@/components/dashboard/PaymentMethodsCard'
 import { LeadsDistribution } from '@/components/dashboard/LeadsDistribution'
 import { LeadStageChart } from '@/components/dashboard/LeadStageChart'
 import { DrillDownDialog } from '@/components/dashboard/DrillDownDialog'
@@ -112,12 +111,6 @@ export default function Index() {
       <KPICards data={data.kpis} onCardClick={setDrillDownType} />
 
       <FunnelSection funnels={data.funnels} />
-
-      <PaymentMethodsCard
-        methods={data.paymentMethods}
-        refunds={data.refunds}
-        onRefundsClick={() => setDrillDownType('reembolsos')}
-      />
 
       <ChartsSection data={data.chartData} geoData={data.geoData} />
 

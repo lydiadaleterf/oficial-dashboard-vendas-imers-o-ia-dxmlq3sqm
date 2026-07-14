@@ -97,52 +97,37 @@ export const fetchDashboardData = async (
   let isPartial = false
   const ff = selectedFunnels.length > 0 ? selectedFunnels : undefined
   const applyFF = (q: any) => (ff ? q.in('funil', ff) : q)
-  const skipIncluded = !ff || ff.some((f) => f.toLowerCase().includes('skip'))
 
-  const [
-    diarioRes,
-    agendamentoRes,
-    funilRes,
-    entradasRes,
-    vendasRes,
-    transacoesRes,
-    skipDiarioRes,
-  ] = await Promise.all([
-    applyFF(
+  const [diarioRes, agendamentoRes, funilRes, entradasRes, vendasRes, transacoesRes] =
+    await Promise.all([
       supabase.from('dashboard_diario_imersao').select('*').order('dia', { ascending: true }),
-    ),
-    applyFF(
-      supabase
-        .from('vagas_fechadas_agendamento')
-        .select('status_agendamento, nome, email')
-        .order('data_agendamento', { ascending: false }),
-    ),
-    supabase.from('funil_skip_vs_lancamento_interno').select('*'),
-    applyFF(
-      supabase
-        .from('entradas_sem_vaga_hubspot')
-        .select('nome, email, dt_entrada, link_hubspot, dealstage_nome')
-        .order('dt_entrada', { ascending: false })
-        .limit(50),
-    ),
-    applyFF(
-      supabase
-        .from('vendas_vendedor_diario_imersao')
-        .select('dia, vendedor, vendas')
-        .order('dia', { ascending: false })
-        .limit(500),
-    ),
-    applyFF(
-      supabase
-        .from('transacoes_imersao_detalhado')
-        .select('valor_pago, oferta, status, estado, is_vaga_fechada, email'),
-    ),
-    supabase
-      .from('funil_skip_imersao_diario')
-      .select('dia, vendas_skip, vendas_entrada')
-      .gte('dia', '2026-06-24')
-      .order('dia', { ascending: true }),
-  ])
+      applyFF(
+        supabase
+          .from('vagas_fechadas_agendamento')
+          .select('status_agendamento, nome, email')
+          .order('data_agendamento', { ascending: false }),
+      ),
+      supabase.from('funil_skip_vs_lancamento_interno').select('*'),
+      applyFF(
+        supabase
+          .from('entradas_sem_vaga_hubspot')
+          .select('nome, email, dt_entrada, link_hubspot, dealstage_nome')
+          .order('dt_entrada', { ascending: false })
+          .limit(50),
+      ),
+      applyFF(
+        supabase
+          .from('vendas_vendedor_diario_imersao')
+          .select('dia, vendedor, vendas')
+          .order('dia', { ascending: false })
+          .limit(500),
+      ),
+      applyFF(
+        supabase
+          .from('transacoes_imersao_detalhado')
+          .select('valor_pago, oferta, status, estado, is_vaga_fechada, email'),
+      ),
+    ])
 
   if (
     diarioRes.error ||
@@ -150,8 +135,7 @@ export const fetchDashboardData = async (
     funilRes.error ||
     entradasRes.error ||
     vendasRes.error ||
-    transacoesRes.error ||
-    skipDiarioRes.error
+    transacoesRes.error
   ) {
     isPartial = true
   }
@@ -224,21 +208,13 @@ export const fetchDashboardData = async (
     fd.selfServiceQtd = Math.max(fd.selfServiceQtd, Number(row.self_service_qtd || 0))
     fd.selfServicePct = Math.max(fd.selfServicePct, Number(row.self_service_pct || 0))
     fd.vendedorPct = Math.max(fd.vendedorPct, Number(row.vendedor_pct || 0))
+    fd.vendedorQtd = Math.max(fd.vendedorQtd, Number(row.vendedor_qtd || 0))
     const vv = Number(row.vendas_do_vendedor || 0)
-    fd.vendedorQtd += vv
     if (row.vendedor && row.vendedor.trim() && row.vendedor !== 'NULL') {
       fd.sellers.push({ nome: row.vendedor, vendas: vv })
     }
   })
   const funnels = Array.from(funnelMap.values())
-
-  if (skipIncluded && (skipDiarioRes.data || []).length > 0) {
-    const sf = funnels.find((f) => f.nome.toLowerCase().includes('skip'))
-    if (sf) {
-      sf.vendaProduto1 = skipDiarioRes.data!.reduce((s, r) => s + Number(r.vendas_skip || 0), 0)
-      sf.vendaEntrada = skipDiarioRes.data!.reduce((s, r) => s + Number(r.vendas_entrada || 0), 0)
-    }
-  }
 
   let parcelado = 0,
     aVista = 0,
