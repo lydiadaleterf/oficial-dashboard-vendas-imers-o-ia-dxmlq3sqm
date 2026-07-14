@@ -19,14 +19,6 @@ interface TablesSectionProps {
   data: DashboardData
 }
 
-const RANK_STYLES = [
-  'bg-amber-100 text-amber-800 border-amber-300',
-  'bg-slate-100 text-slate-700 border-slate-300',
-  'bg-orange-100 text-orange-800 border-orange-300',
-]
-
-const RANK_EMOJI = ['🥇', '🥈', '🥉']
-
 export function TablesSection({ data }: TablesSectionProps) {
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return '-'
@@ -147,7 +139,7 @@ export function TablesSection({ data }: TablesSectionProps) {
           <CardHeader className="pb-3 border-b bg-white">
             <CardTitle className="text-base font-semibold flex items-center gap-2 text-slate-800">
               <Trophy className="w-4 h-4 text-amber-500" />
-              Ranking de Vendedores
+              Venda por Vendedor por Dia
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0 flex-1 overflow-hidden">
@@ -155,29 +147,23 @@ export function TablesSection({ data }: TablesSectionProps) {
               <Table>
                 <TableHeader className="bg-slate-50 sticky top-0 z-10 shadow-sm">
                   <TableRow>
-                    <TableHead className="text-xs h-8">#</TableHead>
+                    <TableHead className="text-xs h-8">Data</TableHead>
                     <TableHead className="text-xs h-8">Vendedor</TableHead>
                     <TableHead className="text-xs h-8 text-right">Vendas</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {data.sellerRanking.length > 0 ? (
-                    data.sellerRanking.map((row, i) => (
+                  {data.sellerDailyData.length > 0 ? (
+                    data.sellerDailyData.map((row, i) => (
                       <TableRow key={i} className="hover:bg-slate-50 border-slate-100">
-                        <TableCell className="text-xs py-2">
-                          {i < 3 ? (
-                            <Badge variant="outline" className={cn('font-bold', RANK_STYLES[i])}>
-                              {RANK_EMOJI[i]} {i + 1}º
-                            </Badge>
-                          ) : (
-                            <span className="text-slate-400 font-medium">{i + 1}º</span>
-                          )}
+                        <TableCell className="text-xs py-2 text-slate-600">
+                          {formatDate(row.dia)}
                         </TableCell>
                         <TableCell className="text-xs font-medium text-slate-700">
                           {row.vendedor}
                         </TableCell>
                         <TableCell className="text-xs text-right font-bold text-teal-600">
-                          {row.totalVendas}
+                          {row.vendas}
                         </TableCell>
                       </TableRow>
                     ))

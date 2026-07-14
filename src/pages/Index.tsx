@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { useDashboardData } from '@/hooks/use-dashboard-data'
 import { KPICards } from '@/components/dashboard/KPICards'
 import { PaymentMethodsCard } from '@/components/dashboard/PaymentMethodsCard'
@@ -6,6 +6,7 @@ import { FunnelSection } from '@/components/dashboard/FunnelSection'
 import { ChartsSection } from '@/components/dashboard/ChartsSection'
 import { TablesSection } from '@/components/dashboard/TablesSection'
 import { DrillDownDialog } from '@/components/dashboard/DrillDownDialog'
+import { FunnelFilter } from '@/components/dashboard/FunnelFilter'
 import { Button } from '@/components/ui/button'
 import { RefreshCw, AlertTriangle } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -19,8 +20,11 @@ interface DrillDownState {
 }
 
 export default function Index() {
-  const { data, loading, refreshing, error, refresh } = useDashboardData()
+  const [selectedFunnels, setSelectedFunnels] = useState<string[]>([])
+  const { data, loading, refreshing, error, refresh } = useDashboardData(selectedFunnels)
   const [drillDown, setDrillDown] = useState<DrillDownState | null>(null)
+
+  const availableFunnels = useMemo(() => (data?.funnels ?? []).map((f) => f.nome), [data])
 
   const handleCardClick = useCallback(async (type: DrillDownType) => {
     setDrillDown({ type, data: null, loading: true })
@@ -88,6 +92,16 @@ export default function Index() {
           {refreshing ? 'Atualizando...' : 'Atualizar Dados'}
         </Button>
       </div>
+
+      {availableFunnels.length > 0 && (
+        <div className="mb-4">
+          <FunnelFilter
+            funnels={availableFunnels}
+            selected={selectedFunnels}
+            onChange={setSelectedFunnels}
+          />
+        </div>
+      )}
 
       {data.isPartial && (
         <Alert className="mb-6 bg-amber-50 text-amber-800 border-amber-200">
