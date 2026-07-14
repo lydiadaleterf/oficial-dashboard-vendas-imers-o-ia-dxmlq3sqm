@@ -1,5 +1,6 @@
 import { useDashboardData } from '@/hooks/use-dashboard-data'
 import { KPICards } from '@/components/dashboard/KPICards'
+import { PaymentMethodsCard } from '@/components/dashboard/PaymentMethodsCard'
 import { FunnelSection } from '@/components/dashboard/FunnelSection'
 import { ChartsSection } from '@/components/dashboard/ChartsSection'
 import { TablesSection } from '@/components/dashboard/TablesSection'
@@ -80,8 +81,9 @@ export default function Index() {
 
       <div className="animate-fade-in">
         <KPICards data={data.kpis} />
+        <PaymentMethodsCard methods={data.paymentMethods} refunds={data.refunds} />
         <FunnelSection funnels={data.funnels} />
-        <ChartsSection data={data.chartData} />
+        <ChartsSection data={data.chartData} geoData={data.geoData} />
         <TablesSection data={data} />
       </div>
     </div>

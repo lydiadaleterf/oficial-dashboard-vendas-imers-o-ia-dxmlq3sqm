@@ -7,14 +7,24 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { Badge } from '@/components/ui/badge'
 import { DashboardData } from '@/services/dashboard'
-import { ExternalLink, AlertCircle, Clock } from 'lucide-react'
+import { ExternalLink, AlertCircle, Clock, Trophy } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { cn } from '@/lib/utils'
 
 interface TablesSectionProps {
   data: DashboardData
 }
+
+const RANK_STYLES = [
+  'bg-amber-100 text-amber-800 border-amber-300',
+  'bg-slate-100 text-slate-700 border-slate-300',
+  'bg-orange-100 text-orange-800 border-orange-300',
+]
+
+const RANK_EMOJI = ['🥇', '🥈', '🥉']
 
 export function TablesSection({ data }: TablesSectionProps) {
   const formatDate = (dateStr: string | null) => {
@@ -28,7 +38,6 @@ export function TablesSection({ data }: TablesSectionProps) {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-      {/* Entradas Sem Vaga */}
       <Card className="shadow-subtle border-amber-200/50 bg-amber-50/10 col-span-1 lg:col-span-2 flex flex-col">
         <CardHeader className="pb-3 border-b bg-white">
           <CardTitle className="text-base font-semibold flex items-center gap-2 text-slate-800">
@@ -85,9 +94,7 @@ export function TablesSection({ data }: TablesSectionProps) {
         </CardContent>
       </Card>
 
-      {/* Agendamentos Pendentes & Vendas por Vendedor (Stacked) */}
       <div className="flex flex-col gap-6 col-span-1">
-        {/* Agendamentos Pendentes */}
         <Card className="shadow-subtle border-amber-200/50 flex-1 flex flex-col">
           <CardHeader className="pb-3 border-b bg-amber-50/50">
             <CardTitle className="text-base font-semibold flex items-center gap-2 text-amber-900">
@@ -123,42 +130,48 @@ export function TablesSection({ data }: TablesSectionProps) {
           </CardContent>
         </Card>
 
-        {/* Vendas por Vendedor */}
         <Card className="shadow-subtle border-slate-200 flex-1 flex flex-col">
           <CardHeader className="pb-3 border-b bg-white">
-            <CardTitle className="text-base font-semibold text-slate-800">
-              Desempenho Vendedores
+            <CardTitle className="text-base font-semibold flex items-center gap-2 text-slate-800">
+              <Trophy className="w-4 h-4 text-amber-500" />
+              Ranking de Vendedores
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0 flex-1 overflow-hidden">
-            <div className="max-h-[180px] overflow-auto">
+            <div className="max-h-[220px] overflow-auto">
               <Table>
                 <TableHeader className="bg-slate-50 sticky top-0 z-10 shadow-sm">
                   <TableRow>
-                    <TableHead className="text-xs h-8">Data</TableHead>
+                    <TableHead className="text-xs h-8">#</TableHead>
                     <TableHead className="text-xs h-8">Vendedor</TableHead>
-                    <TableHead className="text-xs h-8 text-right">Qtd</TableHead>
+                    <TableHead className="text-xs h-8 text-right">Vendas</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {data.vendasPorVendedor.length > 0 ? (
-                    data.vendasPorVendedor.slice(0, 15).map((row, i) => (
+                  {data.sellerRanking.length > 0 ? (
+                    data.sellerRanking.map((row, i) => (
                       <TableRow key={i} className="hover:bg-slate-50 border-slate-100">
-                        <TableCell className="text-xs text-slate-500 whitespace-nowrap">
-                          {formatDate(row.dia)}
+                        <TableCell className="text-xs py-2">
+                          {i < 3 ? (
+                            <Badge variant="outline" className={cn('font-bold', RANK_STYLES[i])}>
+                              {RANK_EMOJI[i]} {i + 1}º
+                            </Badge>
+                          ) : (
+                            <span className="text-slate-400 font-medium">{i + 1}º</span>
+                          )}
                         </TableCell>
                         <TableCell className="text-xs font-medium text-slate-700">
                           {row.vendedor}
                         </TableCell>
                         <TableCell className="text-xs text-right font-bold text-teal-600">
-                          {row.vendas}
+                          {row.totalVendas}
                         </TableCell>
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
                       <TableCell colSpan={3} className="text-center py-4 text-sm text-slate-500">
-                        Sem dados recentes
+                        Sem dados
                       </TableCell>
                     </TableRow>
                   )}
