@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
 import { useDashboardData } from '@/hooks/use-dashboard-data'
 import { useAdaptaNativeData } from '@/hooks/use-adapta-native-data'
+import { FunnelFilter } from '@/components/dashboard/FunnelFilter'
 import { KPICards } from '@/components/dashboard/KPICards'
 import { FunnelSection } from '@/components/dashboard/FunnelSection'
 import { ChartsSection } from '@/components/dashboard/ChartsSection'
@@ -52,7 +53,8 @@ function ErrorState({ error, onRetry }: { error: string | null; onRetry: () => v
 
 export default function Index() {
   const { user, loading: authLoading } = useAuth()
-  const { data, loading, refreshing, error, refresh } = useDashboardData([])
+  const [selectedFunnels, setSelectedFunnels] = useState<string[]>([])
+  const { data, loading, refreshing, error, refresh } = useDashboardData(selectedFunnels)
   const { data: adaptaData } = useAdaptaNativeData()
   const [drillDownType, setDrillDownType] = useState<DrillDownType | null>(null)
 
@@ -98,6 +100,8 @@ export default function Index() {
           Atualizar
         </Button>
       </div>
+
+      <FunnelFilter selected={selectedFunnels} onChange={setSelectedFunnels} />
 
       {data.isPartial && (
         <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-2 animate-fade-in">

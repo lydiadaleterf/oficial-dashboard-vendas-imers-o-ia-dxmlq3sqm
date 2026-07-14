@@ -100,7 +100,9 @@ export const fetchDashboardData = async (
 
   const [diarioRes, agendamentoRes, funilRes, entradasRes, vendasRes, transacoesRes] =
     await Promise.all([
-      supabase.from('dashboard_diario_imersao').select('*').order('dia', { ascending: true }),
+      applyFF(
+        supabase.from('dashboard_diario_imersao').select('*').order('dia', { ascending: true }),
+      ),
       applyFF(
         supabase
           .from('vagas_fechadas_agendamento')
