@@ -2,14 +2,11 @@ import { useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
 import { useDashboardData } from '@/hooks/use-dashboard-data'
-import { useAdaptaNativeData } from '@/hooks/use-adapta-native-data'
 import { FunnelFilter } from '@/components/dashboard/FunnelFilter'
 import { KPICards } from '@/components/dashboard/KPICards'
 import { FunnelSection } from '@/components/dashboard/FunnelSection'
 import { ChartsSection } from '@/components/dashboard/ChartsSection'
 import { TablesSection } from '@/components/dashboard/TablesSection'
-import { LeadsDistribution } from '@/components/dashboard/LeadsDistribution'
-import { LeadStageChart } from '@/components/dashboard/LeadStageChart'
 import { DrillDownDialog } from '@/components/dashboard/DrillDownDialog'
 import { DrillDownType } from '@/services/drill-down'
 import { RefreshCw, AlertTriangle } from 'lucide-react'
@@ -55,7 +52,6 @@ export default function Index() {
   const { user, loading: authLoading } = useAuth()
   const [selectedFunnels, setSelectedFunnels] = useState<string[]>([])
   const { data, loading, refreshing, error, refresh } = useDashboardData(selectedFunnels)
-  const { data: adaptaData } = useAdaptaNativeData()
   const [drillDownType, setDrillDownType] = useState<DrillDownType | null>(null)
 
   if (authLoading) {
@@ -119,17 +115,6 @@ export default function Index() {
       <ChartsSection data={data.chartData} geoData={data.geoData} />
 
       <TablesSection data={data} />
-
-      {adaptaData && (
-        <>
-          <LeadStageChart data={adaptaData.leadsByDealStage} />
-          <LeadsDistribution
-            byOrigemPrimaria={adaptaData.leadsByOrigemPrimaria}
-            byOrigemSecundaria={adaptaData.leadsByOrigemSecundaria}
-            byUtmSource={adaptaData.leadsByUtmSource}
-          />
-        </>
-      )}
 
       <DrillDownDialog type={drillDownType} onClose={() => setDrillDownType(null)} />
     </div>
