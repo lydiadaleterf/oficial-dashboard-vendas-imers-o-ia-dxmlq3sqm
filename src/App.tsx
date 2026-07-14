@@ -3,7 +3,7 @@ import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import Index from './pages/Index'
-import AdaptaLabsNative from './pages/AdaptaLabsNative'
+import Native from './pages/Native'
 import Login from './pages/Login'
 import NotFound from './pages/NotFound'
 import Layout from './components/Layout'
@@ -20,7 +20,7 @@ const App = () => (
           <Route element={<Layout />}>
             <Route path="/" element={<Navigate to="/imersao-labs" replace />} />
             <Route path="/imersao-labs" element={<Index />} />
-            <Route path="/adapta-labs-native" element={<AdaptaLabsNative />} />
+            <Route path="/native" element={<Native />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

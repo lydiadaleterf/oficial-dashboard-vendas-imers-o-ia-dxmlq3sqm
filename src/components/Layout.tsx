@@ -1,17 +1,17 @@
-import { Outlet, Navigate, Link, useLocation } from 'react-router-dom'
+import { useState } from 'react'
+import { Outlet, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
-import { LogOut, Activity, BarChart3, Sparkles } from 'lucide-react'
+import { LogOut, Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
+import { Sheet, SheetContent } from '@/components/ui/sheet'
+import { SidebarContent } from '@/components/Sidebar'
 
-const NAV_ITEMS = [
-  { to: '/imersao-labs', label: 'Imersão Labs', icon: BarChart3 },
-  { to: '/adapta-labs-native', label: 'Adapta Labs Native', icon: Sparkles },
-]
+const SIDEBAR_WIDTH = 'lg:w-64 lg:shrink-0'
 
 export default function Layout() {
   const { session, loading, signOut } = useAuth()
   const location = useLocation()
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   if (loading) return null
 
@@ -20,53 +20,57 @@ export default function Layout() {
   }
 
   return (
-    <main className="flex flex-col min-h-screen bg-slate-50 text-slate-900">
-      <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 shadow-sm">
-        <div className="container flex h-14 items-center justify-between mx-auto px-4 max-w-7xl">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2 font-semibold">
-              <div className="bg-slate-900 p-1.5 rounded-md">
-                <Activity className="h-4 w-4 text-white" />
-              </div>
-              <span className="hidden sm:inline-block">Dashboard</span>
-            </div>
-            <nav className="flex items-center gap-1">
-              {NAV_ITEMS.map((item) => {
-                const isActive = location.pathname === item.to
-                return (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    className={cn(
-                      'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-200',
-                      isActive ? 'bg-teal-50 text-teal-700' : 'text-slate-600 hover:bg-slate-100',
-                    )}
-                  >
-                    <item.icon className="h-4 w-4" />
-                    <span className="hidden md:inline-block">{item.label}</span>
-                  </Link>
-                )
-              })}
-            </nav>
-          </div>
+    <div className="flex min-h-screen bg-slate-50">
+      {/* Desktop sidebar */}
+      <aside className={`hidden lg:block fixed inset-y-0 left-0 w-64 z-40`}>
+        <SidebarContent />
+      </aside>
 
-          <div className="flex items-center gap-4">
-            <div className="text-sm text-slate-500 hidden md:block">{session.user.email}</div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => signOut()}
-              className="gap-2 text-slate-600"
-            >
-              <LogOut className="h-4 w-4" />
-              <span className="hidden sm:inline-block">Sair</span>
-            </Button>
-          </div>
-        </div>
-      </header>
-      <div className="flex-1 w-full mx-auto max-w-7xl px-4 py-6">
-        <Outlet />
+      {/* Mobile drawer */}
+      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+        <SheetContent side="left" className="w-72 p-0 [&>button]:hidden">
+          <SidebarContent onNavigate={() => setMobileOpen(false)} />
+        </SheetContent>
+      </Sheet>
+
+      {/* Main area */}
+      <div className={`flex-1 flex flex-col min-w-0 ${SIDEBAR_WIDTH}`}>
+        {/* Mobile top bar */}
+        <header className="lg:hidden sticky top-0 z-30 flex h-14 items-center justify-between border-b bg-white px-4 shadow-sm">
+          <Button variant="ghost" size="sm" onClick={() => setMobileOpen(true)} className="gap-2">
+            <Menu className="h-5 w-5" />
+            <span className="font-semibold text-sm">Dashboard</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => signOut()}
+            className="gap-2 text-slate-600"
+          >
+            <LogOut className="h-4 w-4" />
+            <span className="hidden sm:inline-block">Sair</span>
+          </Button>
+        </header>
+
+        {/* Desktop top bar */}
+        <header className="hidden lg:flex sticky top-0 z-30 h-14 items-center justify-end border-b bg-white/95 backdrop-blur px-6 shadow-sm">
+          <span className="text-sm text-slate-500 mr-4">{session.user.email}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => signOut()}
+            className="gap-2 text-slate-600"
+          >
+            <LogOut className="h-4 w-4" />
+            Sair
+          </Button>
+        </header>
+
+        {/* Page content */}
+        <main className="flex-1 w-full px-4 lg:px-8 py-6">
+          <Outlet />
+        </main>
       </div>
-    </main>
+    </div>
   )
 }

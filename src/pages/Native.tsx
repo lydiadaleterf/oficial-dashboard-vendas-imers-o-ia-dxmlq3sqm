@@ -1,7 +1,7 @@
 import { Construction, Sparkles } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 
-export default function AdaptaLabsNative() {
+export default function Native() {
   return (
     <div className="flex items-center justify-center min-h-[60vh] animate-fade-in">
       <Card className="max-w-md w-full shadow-subtle border-dashed border-2 border-slate-200">
@@ -12,8 +12,8 @@ export default function AdaptaLabsNative() {
           </div>
           <h1 className="text-2xl font-bold text-slate-700 mb-3">Em Breve</h1>
           <p className="text-slate-500 text-sm max-w-xs leading-relaxed">
-            Adapta Labs Native está em construção. Em breve você poderá acompanhar o funil de vendas
-            deste produto por aqui.
+            A seção Native está em construção. Em breve você poderá acompanhar novos produtos por
+            aqui.
           </p>
           <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-full text-xs font-medium text-slate-500">
             <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
