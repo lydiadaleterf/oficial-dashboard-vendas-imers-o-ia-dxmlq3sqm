@@ -98,6 +98,11 @@ export const fetchDashboardData = async (
   const ff = selectedFunnels.length > 0 ? selectedFunnels : undefined
   const applyFF = (q: any) => (ff ? q.in('funil', ff) : q)
 
+  console.debug(
+    '[Dashboard] selectedFunnels (technical/unaccented values):',
+    JSON.stringify(selectedFunnels),
+  )
+
   const [diarioRes, agendamentoRes, funilRes, entradasRes, vendasRes, transacoesRes] =
     await Promise.all([
       applyFF(

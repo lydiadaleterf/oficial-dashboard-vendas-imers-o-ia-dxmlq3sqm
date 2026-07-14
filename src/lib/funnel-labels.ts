@@ -1,15 +1,17 @@
-export const FUNNEL_LABELS: Record<string, string> = {
+export const FUNNEL_MAP: Record<string, string> = {
   Skip: 'Skip',
   'Lancamento Interno': 'Lançamento Interno',
 }
 
-export const FUNNEL_KEYS = Object.keys(FUNNEL_LABELS)
+export const FUNNEL_KEYS = Object.keys(FUNNEL_MAP)
 
 export const FUNNEL_OPTIONS = [
   { label: 'Todos', value: 'all' },
-  ...FUNNEL_KEYS.map((key) => ({ label: FUNNEL_LABELS[key], value: key })),
+  ...FUNNEL_KEYS.map((key) => ({ label: FUNNEL_MAP[key], value: key })),
 ]
 
 export function getFunnelLabel(dbValue: string): string {
-  return FUNNEL_LABELS[dbValue] ?? dbValue
+  return FUNNEL_MAP[dbValue] ?? dbValue
 }
+
+export const FUNNEL_LABELS = FUNNEL_MAP

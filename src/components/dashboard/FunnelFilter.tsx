@@ -1,6 +1,6 @@
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { Filter } from 'lucide-react'
-import { FUNNEL_OPTIONS } from '@/lib/funnel-labels'
+import { FUNNEL_OPTIONS, FUNNEL_MAP } from '@/lib/funnel-labels'
 
 interface FunnelFilterProps {
   selected: string[]
@@ -28,8 +28,9 @@ export function FunnelFilter({ selected, onChange }: FunnelFilterProps) {
             key={opt.value}
             value={opt.value}
             className="text-xs px-3 py-1.5 rounded-lg font-medium border"
+            aria-label={opt.label}
           >
-            {opt.label}
+            {FUNNEL_MAP[opt.value] ?? opt.label}
           </ToggleGroupItem>
         ))}
       </ToggleGroup>
