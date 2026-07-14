@@ -9,9 +9,12 @@ import {
   Tooltip as RechartsTooltip,
   Legend,
   ResponsiveContainer,
+  LabelList,
 } from 'recharts'
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { BrazilMap } from '@/components/dashboard/BrazilMap'
+import { TopStatesRanking } from '@/components/dashboard/TopStatesRanking'
 
 interface ChartsSectionProps {
   data: ChartDataPoint[]
@@ -23,8 +26,6 @@ export function ChartsSection({ data, geoData }: ChartsSectionProps) {
     ...d,
     diaFormatted: d.dia ? format(parseISO(d.dia), 'dd MMM', { locale: ptBR }) : '',
   }))
-
-  const geoChartData = geoData.slice(0, 10)
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
@@ -63,14 +64,30 @@ export function ChartsSection({ data, geoData }: ChartsSectionProps) {
                   fill="#94a3b8"
                   radius={[4, 4, 0, 0]}
                   maxBarSize={40}
-                />
+                >
+                  <LabelList
+                    dataKey="entradas_realizadas"
+                    position="top"
+                    fill="#64748b"
+                    fontSize={10}
+                    formatter={(value: number) => (value > 0 ? String(value) : '')}
+                  />
+                </Bar>
                 <Bar
                   dataKey="vagas_fechadas"
                   name="Vagas Fechadas"
                   fill="#14b8a6"
                   radius={[4, 4, 0, 0]}
                   maxBarSize={40}
-                />
+                >
+                  <LabelList
+                    dataKey="vagas_fechadas"
+                    position="top"
+                    fill="#0d9488"
+                    fontSize={10}
+                    formatter={(value: number) => (value > 0 ? String(value) : '')}
+                  />
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -84,41 +101,14 @@ export function ChartsSection({ data, geoData }: ChartsSectionProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-[300px] w-full mt-4">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={geoChartData}
-                layout="vertical"
-                margin={{ top: 5, right: 10, left: 20, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
-                <XAxis
-                  type="number"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: '#64748b', fontSize: 12 }}
-                />
-                <YAxis
-                  type="category"
-                  dataKey="estado"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: '#64748b', fontSize: 12 }}
-                  width={50}
-                />
-                <RechartsTooltip
-                  cursor={{ fill: '#f1f5f9' }}
-                  contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0' }}
-                />
-                <Bar
-                  dataKey="count"
-                  name="Vendas"
-                  fill="#14b8a6"
-                  radius={[0, 4, 4, 0]}
-                  maxBarSize={25}
-                />
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="w-full mt-4">
+            <BrazilMap geoData={geoData} />
+          </div>
+          <div className="mt-4 pt-4 border-t border-slate-100">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+              Top Estados
+            </p>
+            <TopStatesRanking geoData={geoData} />
           </div>
         </CardContent>
       </Card>

@@ -111,7 +111,7 @@ export const fetchDashboardData = async (): Promise<DashboardData> => {
       .limit(100),
     supabase
       .from('transacoes_imersao_detalhado')
-      .select('valor_pago, oferta, status, estado, is_vaga_fechada'),
+      .select('valor_pago, oferta, status, estado, is_vaga_fechada, email'),
     supabase
       .from('funil_skip_imersao_diario')
       .select('dia, vendas_skip, vendas_entrada')
@@ -213,7 +213,7 @@ export const fetchDashboardData = async (): Promise<DashboardData> => {
     aVista = 0,
     refundCount = 0,
     refundValor = 0
-  const geoMap = new Map<string, number>()
+  const geoEmailMap = new Map<string, Set<string>>()
   const vendaDireta = funnels.reduce((s, f) => s + f.vendedorQtd, 0)
 
   transacoesRes.data?.forEach((row) => {
@@ -227,15 +227,18 @@ export const fetchDashboardData = async (): Promise<DashboardData> => {
     } else if (valor > 0) {
       parcelado++
     }
-    const estado = row.estado || 'Não informado'
-    geoMap.set(estado, (geoMap.get(estado) || 0) + 1)
+    if (row.is_vaga_fechada && row.email) {
+      const estado = (row.estado || 'Não informado').trim()
+      if (!geoEmailMap.has(estado)) geoEmailMap.set(estado, new Set())
+      geoEmailMap.get(estado)!.add(row.email)
+    }
   })
 
   const pmTotal = parcelado + aVista + vendaDireta
   const paymentMethods: PaymentMethodData = { parcelado, aVista, vendaDireta, total: pmTotal }
   const refunds: RefundData = { count: refundCount, valor: refundValor }
-  const geoData: GeoDataPoint[] = Array.from(geoMap.entries())
-    .map(([estado, count]) => ({ estado, count }))
+  const geoData: GeoDataPoint[] = Array.from(geoEmailMap.entries())
+    .map(([estado, emails]) => ({ estado, count: emails.size }))
     .sort((a, b) => b.count - a.count)
 
   const sellerMap = new Map<string, number>()
