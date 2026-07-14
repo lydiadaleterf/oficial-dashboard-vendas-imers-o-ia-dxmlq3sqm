@@ -13,8 +13,7 @@ import {
 } from 'recharts'
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { BrazilMap } from '@/components/dashboard/BrazilMap'
-import { TopStatesRanking } from '@/components/dashboard/TopStatesRanking'
+import { GeoBarChart } from '@/components/dashboard/GeoBarChart'
 
 interface ChartsSectionProps {
   data: ChartDataPoint[]
@@ -99,16 +98,11 @@ export function ChartsSection({ data, geoData }: ChartsSectionProps) {
           <CardTitle className="text-lg font-semibold text-slate-800">
             Distribuição Geográfica
           </CardTitle>
+          <p className="text-xs text-slate-500 mt-1">Vagas fechadas por estado (ranking)</p>
         </CardHeader>
         <CardContent>
           <div className="w-full mt-4">
-            <BrazilMap geoData={geoData} />
-          </div>
-          <div className="mt-4 pt-4 border-t border-slate-100">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
-              Top Estados
-            </p>
-            <TopStatesRanking geoData={geoData} />
+            <GeoBarChart geoData={geoData} />
           </div>
         </CardContent>
       </Card>
