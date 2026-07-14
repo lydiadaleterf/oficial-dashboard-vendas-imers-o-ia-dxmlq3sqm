@@ -14,9 +14,7 @@ export default function AdaptaNative() {
           <CardTitle className="text-xl font-bold text-slate-800">Em Construção</CardTitle>
         </CardHeader>
         <CardContent className="text-center">
-          <p className="text-sm text-slate-500">
-            Esta página está sendo preparada para o lançamento do Adapta Summit.
-          </p>
+          <p className="text-sm text-slate-500">Esta página está sendo preparada!</p>
         </CardContent>
       </Card>
     </div>
