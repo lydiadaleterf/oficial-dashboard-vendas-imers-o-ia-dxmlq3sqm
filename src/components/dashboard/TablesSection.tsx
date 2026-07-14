@@ -13,6 +13,7 @@ import { ExternalLink, AlertCircle, Clock, Trophy } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
+import { dealStageBadgeClass } from '@/lib/deal-stage-colors'
 
 interface TablesSectionProps {
   data: DashboardData
@@ -75,7 +76,7 @@ export function TablesSection({ data }: TablesSectionProps) {
                           {row.dealstage_nome && (
                             <Badge
                               variant="secondary"
-                              className="text-[10px] font-medium bg-slate-100 text-slate-600"
+                              className={dealStageBadgeClass(row.dealstage_nome)}
                             >
                               {row.dealstage_nome}
                             </Badge>
