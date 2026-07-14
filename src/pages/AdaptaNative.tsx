@@ -1,5 +1,6 @@
 import { useAdaptaNativeData } from '@/hooks/use-adapta-native-data'
 import { LeadsDistribution } from '@/components/dashboard/LeadsDistribution'
+import { LeadStageChart } from '@/components/dashboard/LeadStageChart'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -12,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { RefreshCw, AlertTriangle, Rocket, Users, TrendingUp } from 'lucide-react'
+import { RefreshCw, AlertTriangle, TrendingUp } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
@@ -69,7 +70,7 @@ export default function AdaptaNative() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Adapta Labs Native</h1>
-          <p className="text-slate-500 text-sm">Acompanhe o lançamento do produto.</p>
+          <p className="text-slate-500 text-sm">Acompanhe o pipeline de leads do produto.</p>
         </div>
         <Button
           onClick={refresh}
@@ -83,28 +84,7 @@ export default function AdaptaNative() {
         </Button>
       </div>
 
-      <Card className="shadow-subtle mb-6 border-t-4 border-t-purple-500">
-        <CardContent className="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-purple-50 rounded-lg">
-              <Rocket className="w-6 h-6 text-purple-600" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-500">Lançamento</p>
-              <p className="text-lg font-bold text-slate-800">Agosto 2026</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-teal-50 rounded-lg">
-              <Users className="w-6 h-6 text-teal-600" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-500">Total de Leads</p>
-              <p className="text-3xl font-bold text-slate-800">{data.totalLeads}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <LeadStageChart data={data.leadsByDealStage} />
 
       <LeadsDistribution
         byOrigemPrimaria={data.leadsByOrigemPrimaria}

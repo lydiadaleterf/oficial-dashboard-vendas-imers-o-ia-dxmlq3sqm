@@ -27,6 +27,7 @@ export interface AdaptaNativeData {
   leadsByOrigemPrimaria: LeadDistributionItem[]
   leadsByOrigemSecundaria: LeadDistributionItem[]
   leadsByUtmSource: LeadDistributionItem[]
+  leadsByDealStage: LeadDistributionItem[]
   dailySales: AdaptaDailySales[]
 }
 
@@ -58,6 +59,7 @@ export async function fetchAdaptaNativeData(): Promise<AdaptaNativeData> {
     leadsByOrigemPrimaria: aggregateLeads(leads, 'origem_primaria'),
     leadsByOrigemSecundaria: aggregateLeads(leads, 'origem_secundaria'),
     leadsByUtmSource: aggregateLeads(leads, 'utm_source'),
+    leadsByDealStage: aggregateLeads(leads, 'dealstage'),
     dailySales,
   }
 }
