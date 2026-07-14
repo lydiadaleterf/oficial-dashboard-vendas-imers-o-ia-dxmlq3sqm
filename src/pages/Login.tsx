@@ -49,7 +49,7 @@ export default function Login() {
           <div className="w-12 h-12 bg-slate-900 rounded-full flex items-center justify-center mb-2">
             <Activity className="w-6 h-6 text-white" />
           </div>
-          <CardTitle className="text-2xl font-bold tracking-tight">Imersão IA para CEOs</CardTitle>
+          <CardTitle className="text-2xl font-bold tracking-tight">Dashboard BU Labs</CardTitle>
           <CardDescription>Acesso restrito ao dashboard de vendas</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
