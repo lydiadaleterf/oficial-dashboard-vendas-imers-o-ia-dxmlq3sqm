@@ -58,23 +58,35 @@ export function TablesSection({ data }: TablesSectionProps) {
               <TableBody>
                 {data.entradasSemVaga.length > 0 ? (
                   data.entradasSemVaga.map((row, i) => (
-                    <TableRow key={i} className="hover:bg-slate-50/80 transition-colors group">
+                    <TableRow
+                      key={i}
+                      className={cn(
+                        'hover:bg-slate-50/80 transition-colors group',
+                        row.link_hubspot && 'cursor-pointer',
+                      )}
+                      onClick={() => {
+                        if (row.link_hubspot)
+                          window.open(row.link_hubspot, '_blank', 'noopener,noreferrer')
+                      }}
+                    >
                       <TableCell className="font-medium text-slate-700">
-                        {row.nome || <span className="italic text-slate-400">Sem nome</span>}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {row.nome || <span className="italic text-slate-400">Sem nome</span>}
+                          {row.dealstage_nome && (
+                            <Badge
+                              variant="secondary"
+                              className="text-[10px] font-medium bg-slate-100 text-slate-600"
+                            >
+                              {row.dealstage_nome}
+                            </Badge>
+                          )}
+                        </div>
                         <div className="text-xs text-slate-500 font-normal">{row.email}</div>
                       </TableCell>
                       <TableCell className="text-slate-600">{formatDate(row.dt_entrada)}</TableCell>
                       <TableCell className="text-right">
                         {row.link_hubspot ? (
-                          <a
-                            href={row.link_hubspot}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center justify-center p-2 rounded-md hover:bg-amber-100 text-amber-600 transition-colors opacity-70 group-hover:opacity-100"
-                            title="Abrir no HubSpot"
-                          >
-                            <ExternalLink className="w-4 h-4" />
-                          </a>
+                          <ExternalLink className="w-4 h-4 text-amber-600 opacity-70 group-hover:opacity-100" />
                         ) : (
                           <span className="text-slate-300 text-xs">-</span>
                         )}

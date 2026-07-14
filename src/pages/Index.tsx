@@ -1,4 +1,6 @@
+import { useState, useMemo } from 'react'
 import { useDashboardData } from '@/hooks/use-dashboard-data'
+import { FunnelFilter } from '@/components/dashboard/FunnelFilter'
 import { KPICards } from '@/components/dashboard/KPICards'
 import { PaymentMethodsCard } from '@/components/dashboard/PaymentMethodsCard'
 import { FunnelSection } from '@/components/dashboard/FunnelSection'
@@ -11,6 +13,24 @@ import { Skeleton } from '@/components/ui/skeleton'
 
 export default function Index() {
   const { data, loading, refreshing, error, refresh } = useDashboardData()
+  const [selectedFunnelNames, setSelectedFunnelNames] = useState<string[] | null>(null)
+
+  const availableFunnels = useMemo(() => data?.funnels.map((f) => f.nome) ?? [], [data])
+  const effectiveSelection = selectedFunnelNames ?? availableFunnels
+  const filteredFunnels = useMemo(
+    () => data?.funnels.filter((f) => effectiveSelection.includes(f.nome)) ?? [],
+    [data, effectiveSelection],
+  )
+  const toggleFunnel = (name: string) => {
+    setSelectedFunnelNames((prev) => {
+      const current = prev ?? availableFunnels
+      if (current.includes(name)) {
+        const next = current.filter((n) => n !== name)
+        return next.length === 0 ? current : next
+      }
+      return [...current, name]
+    })
+  }
 
   if (loading && !data) {
     return (
@@ -82,7 +102,12 @@ export default function Index() {
       <div className="animate-fade-in">
         <KPICards data={data.kpis} />
         <PaymentMethodsCard methods={data.paymentMethods} refunds={data.refunds} />
-        <FunnelSection funnels={data.funnels} />
+        <FunnelFilter
+          available={availableFunnels}
+          selected={effectiveSelection}
+          onToggle={toggleFunnel}
+        />
+        <FunnelSection funnels={filteredFunnels} />
         <ChartsSection data={data.chartData} geoData={data.geoData} />
         <TablesSection data={data} />
       </div>

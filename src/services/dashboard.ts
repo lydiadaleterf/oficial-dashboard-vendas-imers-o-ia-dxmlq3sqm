@@ -57,6 +57,7 @@ export interface TableEntradasRow {
   email: string
   dt_entrada: string | null
   link_hubspot: string | null
+  dealstage_nome: string | null
 }
 
 export interface TableAgendamentoRow {
@@ -83,28 +84,40 @@ const isRefundStatus = (status: string) => status.includes('reembol') || status.
 export const fetchDashboardData = async (): Promise<DashboardData> => {
   let isPartial = false
 
-  const [diarioRes, agendamentoRes, funilRes, entradasRes, vendasRes, transacoesRes] =
-    await Promise.all([
-      supabase.from('dashboard_diario_imersao').select('*').order('dia', { ascending: true }),
-      supabase
-        .from('vagas_fechadas_agendamento')
-        .select('status_agendamento, nome, email')
-        .order('data_agendamento', { ascending: false }),
-      supabase.from('funil_skip_vs_lancamento_interno').select('*'),
-      supabase
-        .from('entradas_sem_vaga_hubspot')
-        .select('nome, email, dt_entrada, link_hubspot')
-        .order('dt_entrada', { ascending: false })
-        .limit(50),
-      supabase
-        .from('vendas_vendedor_diario_imersao')
-        .select('dia, vendedor, vendas')
-        .order('dia', { ascending: false })
-        .limit(100),
-      supabase
-        .from('transacoes_imersao_detalhado')
-        .select('valor_pago, oferta, status, estado, is_vaga_fechada'),
-    ])
+  const [
+    diarioRes,
+    agendamentoRes,
+    funilRes,
+    entradasRes,
+    vendasRes,
+    transacoesRes,
+    skipDiarioRes,
+  ] = await Promise.all([
+    supabase.from('dashboard_diario_imersao').select('*').order('dia', { ascending: true }),
+    supabase
+      .from('vagas_fechadas_agendamento')
+      .select('status_agendamento, nome, email')
+      .order('data_agendamento', { ascending: false }),
+    supabase.from('funil_skip_vs_lancamento_interno').select('*'),
+    supabase
+      .from('entradas_sem_vaga_hubspot')
+      .select('nome, email, dt_entrada, link_hubspot, dealstage_nome')
+      .order('dt_entrada', { ascending: false })
+      .limit(50),
+    supabase
+      .from('vendas_vendedor_diario_imersao')
+      .select('dia, vendedor, vendas')
+      .order('dia', { ascending: false })
+      .limit(100),
+    supabase
+      .from('transacoes_imersao_detalhado')
+      .select('valor_pago, oferta, status, estado, is_vaga_fechada'),
+    supabase
+      .from('funil_skip_imersao_diario')
+      .select('dia, vendas_skip, vendas_entrada')
+      .gte('dia', '2026-06-24')
+      .order('dia', { ascending: true }),
+  ])
 
   if (
     diarioRes.error ||
@@ -112,7 +125,8 @@ export const fetchDashboardData = async (): Promise<DashboardData> => {
     funilRes.error ||
     entradasRes.error ||
     vendasRes.error ||
-    transacoesRes.error
+    transacoesRes.error ||
+    skipDiarioRes.error
   ) {
     isPartial = true
   }
@@ -179,6 +193,21 @@ export const fetchDashboardData = async (): Promise<DashboardData> => {
     }
   })
   const funnels = Array.from(funnelMap.values())
+
+  const skipDailyData = skipDiarioRes.data || []
+  if (skipDailyData.length > 0) {
+    const skipFunnel = funnels.find((f) => f.nome.toLowerCase().includes('skip'))
+    if (skipFunnel) {
+      skipFunnel.vendaProduto1 = skipDailyData.reduce(
+        (sum, r) => sum + Number(r.vendas_skip || 0),
+        0,
+      )
+      skipFunnel.vendaEntrada = skipDailyData.reduce(
+        (sum, r) => sum + Number(r.vendas_entrada || 0),
+        0,
+      )
+    }
+  }
 
   let parcelado = 0,
     aVista = 0,

@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { PaymentMethodData, RefundData } from '@/services/dashboard'
 import { CreditCard, Banknote, UserCheck, RotateCcw } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 
 interface PaymentMethodsCardProps {
@@ -44,8 +45,13 @@ export function PaymentMethodsCard({ methods, refunds }: PaymentMethodsCardProps
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
       <Card className="shadow-subtle col-span-1 lg:col-span-2">
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg font-semibold text-slate-800">
+          <CardTitle className="text-lg font-semibold text-slate-800 flex items-center gap-2">
             Método de Fechamento
+            {refunds.count > 0 && (
+              <Badge variant="outline" className="text-xs border-red-300 text-red-600 bg-red-50">
+                {refunds.count} reembolso{refunds.count > 1 ? 's' : ''}
+              </Badge>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>

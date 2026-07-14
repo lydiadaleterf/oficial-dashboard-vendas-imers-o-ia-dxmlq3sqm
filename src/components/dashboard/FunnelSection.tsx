@@ -52,7 +52,12 @@ function ConversionArrow({ pct }: { pct: number }) {
 
 export function FunnelSection({ funnels }: FunnelSectionProps) {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <div
+      className={cn(
+        'grid gap-6 mb-6',
+        funnels.length === 1 ? 'grid-cols-1 max-w-md mx-auto' : 'grid-cols-1 lg:grid-cols-2',
+      )}
+    >
       {funnels.map((funnel) => {
         const isSkip = funnel.nome.toLowerCase().includes('skip')
         const maxVal = Math.max(funnel.vendaProduto1, funnel.vendaEntrada, funnel.vagasFechadas, 1)

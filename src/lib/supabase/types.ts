@@ -35,6 +35,7 @@ export type Database = {
           deal_id: string | null
           dealname: string | null
           dealstage: string | null
+          dealstage_nome: string | null
           doc: string | null
           dt_entrada: string | null
           email: string
@@ -45,6 +46,7 @@ export type Database = {
           deal_id?: string | null
           dealname?: string | null
           dealstage?: string | null
+          dealstage_nome?: string | null
           doc?: string | null
           dt_entrada?: string | null
           email: string
@@ -55,6 +57,7 @@ export type Database = {
           deal_id?: string | null
           dealname?: string | null
           dealstage?: string | null
+          dealstage_nome?: string | null
           doc?: string | null
           dt_entrada?: string | null
           email?: string
