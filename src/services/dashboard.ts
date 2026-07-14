@@ -142,6 +142,11 @@ export const fetchDashboardData = async (
     isPartial = true
   }
 
+  console.debug('[Dashboard] selectedFunnels:', selectedFunnels)
+  console.debug('[Dashboard] diario rows count:', diarioRes.data?.length ?? 0)
+  const distinctFunnels = [...new Set(diarioRes.data?.map((r) => r.funil).filter(Boolean) ?? [])]
+  console.debug('[Dashboard] distinct funnels in diario data:', distinctFunnels)
+
   const diarioMap = new Map<string, ChartDataPoint>()
   diarioRes.data?.forEach((row) => {
     if (!diarioMap.has(row.dia)) {
@@ -166,6 +171,15 @@ export const fetchDashboardData = async (
     kpiVagas += e.vagas_fechadas
     kpiReceita += e.receita_fechada
   })
+
+  console.debug(
+    '[Dashboard] aggregated KPIs - vagas:',
+    kpiVagas,
+    'receita:',
+    kpiReceita,
+    'chartData points:',
+    chartData.length,
+  )
 
   let taxaAgendamento = 0
   const agendamentosPendentes: TableAgendamentoRow[] = []
