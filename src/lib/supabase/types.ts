@@ -9,6 +9,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      adapta_case_leads_hubspot: {
+        Row: {
+          data_criacao: string | null
+          deal_id: string
+          dealstage: string | null
+          origem_primaria: string | null
+          origem_secundaria: string | null
+          utm_source: string | null
+        }
+        Insert: {
+          data_criacao?: string | null
+          deal_id: string
+          dealstage?: string | null
+          origem_primaria?: string | null
+          origem_secundaria?: string | null
+          utm_source?: string | null
+        }
+        Update: {
+          data_criacao?: string | null
+          deal_id?: string
+          dealstage?: string | null
+          origem_primaria?: string | null
+          origem_secundaria?: string | null
+          utm_source?: string | null
+        }
+        Relationships: []
+      }
+      adapta_summit_vendas_diario: {
+        Row: {
+          dia: string
+          oferta: string | null
+          receita: number | null
+          status: string | null
+          vendas: number | null
+        }
+        Insert: {
+          dia: string
+          oferta?: string | null
+          receita?: number | null
+          status?: string | null
+          vendas?: number | null
+        }
+        Update: {
+          dia?: string
+          oferta?: string | null
+          receita?: number | null
+          status?: string | null
+          vendas?: number | null
+        }
+        Relationships: []
+      }
       dashboard_diario_imersao: {
         Row: {
           dia: string

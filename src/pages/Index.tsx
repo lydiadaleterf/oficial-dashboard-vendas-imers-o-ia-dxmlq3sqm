@@ -1,6 +1,5 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { useDashboardData } from '@/hooks/use-dashboard-data'
-import { FunnelFilter } from '@/components/dashboard/FunnelFilter'
 import { KPICards } from '@/components/dashboard/KPICards'
 import { PaymentMethodsCard } from '@/components/dashboard/PaymentMethodsCard'
 import { FunnelSection } from '@/components/dashboard/FunnelSection'
@@ -21,40 +20,18 @@ interface DrillDownState {
 
 export default function Index() {
   const { data, loading, refreshing, error, refresh } = useDashboardData()
-  const [selectedFunnelNames, setSelectedFunnelNames] = useState<string[] | null>(null)
   const [drillDown, setDrillDown] = useState<DrillDownState | null>(null)
 
-  const availableFunnels = useMemo(() => data?.funnels.map((f) => f.nome) ?? [], [data])
-  const effectiveSelection = selectedFunnelNames ?? availableFunnels
-  const filteredFunnels = useMemo(
-    () => data?.funnels.filter((f) => effectiveSelection.includes(f.nome)) ?? [],
-    [data, effectiveSelection],
-  )
-
-  const toggleFunnel = (name: string) => {
-    setSelectedFunnelNames((prev) => {
-      const current = prev ?? availableFunnels
-      if (current.includes(name)) {
-        const next = current.filter((n) => n !== name)
-        return next.length === 0 ? current : next
-      }
-      return [...current, name]
-    })
-  }
-
-  const handleCardClick = useCallback(
-    async (type: DrillDownType) => {
-      setDrillDown({ type, data: null, loading: true })
-      try {
-        const result = await fetchDrillDownData(type, selectedFunnelNames)
-        setDrillDown({ type, data: result, loading: false })
-      } catch (err) {
-        console.error('Error fetching drill-down data:', err)
-        setDrillDown({ type, data: null, loading: false })
-      }
-    },
-    [selectedFunnelNames],
-  )
+  const handleCardClick = useCallback(async (type: DrillDownType) => {
+    setDrillDown({ type, data: null, loading: true })
+    try {
+      const result = await fetchDrillDownData(type)
+      setDrillDown({ type, data: result, loading: false })
+    } catch (err) {
+      console.error('Error fetching drill-down data:', err)
+      setDrillDown({ type, data: null, loading: false })
+    }
+  }, [])
 
   if (loading && !data) {
     return (
@@ -112,14 +89,6 @@ export default function Index() {
         </Button>
       </div>
 
-      <div className="sticky top-[96px] z-20 -mx-4 lg:-mx-8 px-4 lg:px-8 py-3 bg-slate-50/95 backdrop-blur border-b border-slate-200 mb-6">
-        <FunnelFilter
-          available={availableFunnels}
-          selected={effectiveSelection}
-          onToggle={toggleFunnel}
-        />
-      </div>
-
       {data.isPartial && (
         <Alert className="mb-6 bg-amber-50 text-amber-800 border-amber-200">
           <AlertTriangle className="h-4 w-4 text-amber-600" />
@@ -138,7 +107,7 @@ export default function Index() {
           refunds={data.refunds}
           onRefundsClick={() => handleCardClick('reembolsos')}
         />
-        <FunnelSection funnels={filteredFunnels} />
+        <FunnelSection funnels={data.funnels} />
         <ChartsSection data={data.chartData} geoData={data.geoData} />
         <TablesSection data={data} />
       </div>
