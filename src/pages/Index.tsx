@@ -142,6 +142,7 @@ export default function Index() {
         type={drillDownType}
         onClose={() => setDrillDownType(null)}
         selectedFunnels={selectedFunnels}
+        drillDownData={data.drillDown}
       />
     </div>
   )

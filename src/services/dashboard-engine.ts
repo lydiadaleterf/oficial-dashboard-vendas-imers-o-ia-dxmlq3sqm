@@ -233,8 +233,8 @@ export function processDashboardData(
     return !closedEmails.has(email)
   })
 
-  const totalVagasFechadas = funnels.reduce((s, f) => s + f.vagasFechadas, 0)
-  const kpiEntradasPendentes = Math.max(0, approvedCount - totalVagasFechadas)
+  const totalVagasFechadas = vagasFechadas.length
+  const kpiEntradasPendentes = entradasPendentesFiltered.length
   const pmTotal = parcelado + aVista + vendaDireta
   const geoData: GeoDataPoint[] = Array.from(geoEmailMap.entries())
     .map(([estado, emails]) => ({ estado, count: emails.size }))
@@ -259,6 +259,33 @@ export function processDashboardData(
     .map(([vendedor, totalVendas]) => ({ vendedor, totalVendas }))
     .sort((a, b) => b.totalVendas - a.totalVendas)
 
+  const hubspotLinkMap = new Map<string, string>()
+  transacoes.forEach((row) => {
+    const email = (row.email || '').toString().trim().toLowerCase()
+    if (email && row.link_hubspot && !hubspotLinkMap.has(email)) {
+      hubspotLinkMap.set(email, row.link_hubspot)
+    }
+  })
+
+  const enrichedVagasFechadas = vagasFechadas.map((v) => ({
+    ...v,
+    link_hubspot: (() => {
+      const email = (v.email || '').toString().trim().toLowerCase()
+      return email ? hubspotLinkMap.get(email) || null : null
+    })(),
+  }))
+
+  const drillDownRecords = {
+    entradas: transacoes.filter((t) => (t.status || '').toLowerCase() === 'approved'),
+    vagasFechadas: enrichedVagasFechadas,
+    receita: transacoes.filter(
+      (t) => isVagaFechada(t.is_vaga_fechada) && !isRefundStatus((t.status || '').toLowerCase()),
+    ),
+    entradasPendentes: entradasPendentesFiltered as Record<string, any>[],
+    reembolsos: transacoes.filter((t) => isRefundStatus((t.status || '').toLowerCase())),
+    agendamento: enrichedVagasFechadas,
+  }
+
   return {
     kpis: {
       entradas: approvedCount,
@@ -278,6 +305,7 @@ export function processDashboardData(
     sellerDailyData,
     entradasSemVaga: entradasPendentesFiltered as TableEntradasRow[],
     agendamentosPendentes,
+    drillDown: drillDownRecords,
     isPartial,
   }
 }

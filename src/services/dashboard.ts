@@ -88,6 +88,15 @@ export interface TableAgendamentoRow {
   status_agendamento: string | null
 }
 
+export interface DrillDownData {
+  entradas: Record<string, any>[]
+  vagasFechadas: Record<string, any>[]
+  receita: Record<string, any>[]
+  entradasPendentes: Record<string, any>[]
+  reembolsos: Record<string, any>[]
+  agendamento: Record<string, any>[]
+}
+
 export interface DashboardData {
   kpis: KPIData
   funnels: FunnelData[]
@@ -100,6 +109,7 @@ export interface DashboardData {
   sellerDailyData: SellerDailyEntry[]
   entradasSemVaga: TableEntradasRow[]
   agendamentosPendentes: TableAgendamentoRow[]
+  drillDown: DrillDownData
   isPartial: boolean
 }
 
