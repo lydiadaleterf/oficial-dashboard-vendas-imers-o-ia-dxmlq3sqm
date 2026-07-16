@@ -26,6 +26,12 @@ export function formatPercent(val: any, decimals = 1): string {
   return `${num.toFixed(decimals)}%`
 }
 
+export function formatDays(val: any): string {
+  const num = safeNumber(val)
+  if (num === null) return '--'
+  return `${Math.round(num)} dias`
+}
+
 export function formatDate(val: any): string {
   if (!val) return '-'
   try {

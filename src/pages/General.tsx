@@ -2,7 +2,9 @@ import { Navigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
 import { useNektData } from '@/hooks/use-nekt-data'
 import { NEKT_QUERIES } from '@/services/nekt'
-import { ScorecardCards } from '@/components/dashboard/ScorecardCards'
+import { HeroKpiCard } from '@/components/dashboard/HeroKpiCard'
+import { ProductBreakdown } from '@/components/dashboard/ProductBreakdown'
+import { EfficiencySection } from '@/components/dashboard/EfficiencySection'
 import { Card, CardContent } from '@/components/ui/card'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -20,6 +22,8 @@ export default function General() {
     )
   }
   if (!user) return <Navigate to="/login" replace />
+
+  const row = data.length > 0 ? data[0] : null
 
   return (
     <div className="space-y-6 p-4 md:p-6 max-w-7xl mx-auto">
@@ -43,10 +47,18 @@ export default function General() {
       </div>
 
       {loading && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <Skeleton key={i} className="h-28 rounded-xl" />
-          ))}
+        <div className="space-y-6">
+          <Skeleton className="h-40 rounded-2xl" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-52 rounded-xl" />
+            ))}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <Skeleton key={i} className="h-36 rounded-xl" />
+            ))}
+          </div>
         </div>
       )}
 
@@ -65,9 +77,15 @@ export default function General() {
         </Card>
       )}
 
-      {!loading && !error && data.length > 0 && <ScorecardCards data={data} />}
+      {!loading && !error && row && (
+        <>
+          <HeroKpiCard receitaTotal={row.receita_total} />
+          <ProductBreakdown row={row} />
+          <EfficiencySection row={row} />
+        </>
+      )}
 
-      {!loading && !error && data.length === 0 && (
+      {!loading && !error && !row && (
         <Card>
           <CardContent className="p-6 text-center text-slate-500">
             Nenhum dado disponível no momento.
