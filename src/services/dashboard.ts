@@ -1,6 +1,11 @@
-import { supabase } from '@/lib/supabase/client'
+import { nektQuery, NEKT_QUERIES } from '@/services/nekt'
 
 export type FunnelSelection = string[]
+
+export interface DateRange {
+  startDate: string
+  endDate: string
+}
 
 export interface KPIData {
   vagasFechadas: number
@@ -96,286 +101,44 @@ export interface DashboardData {
   isPartial: boolean
 }
 
-const isRefundStatus = (s: string) => s.includes('reembol') || s.includes('refund')
-
-const safeNum = (val: unknown): number => {
-  if (val === null || val === undefined || val === '' || val === 'null' || val === 'NULL') return 0
-  const n = Number(val)
-  return Number.isFinite(n) ? n : 0
+export interface RawDashboardData {
+  diario: Record<string, any>[]
+  vagasFechadas: Record<string, any>[]
+  funil: Record<string, any>[]
+  entradasSemVaga: Record<string, any>[]
+  vendasVendedor: Record<string, any>[]
+  transacoes: Record<string, any>[]
 }
 
-const normalizeFunil = (s: string): string =>
-  s
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+export interface FetchResult {
+  data: RawDashboardData
+  isPartial: boolean
+}
 
-const SCHEDULED_STATUSES = ['confirmed', 'agendado', 'scheduled', 'confirmado']
-const UNSCHEDULED_STATUSES = ['nao_agendou', 'nao_agendado', 'not_scheduled', 'no_show']
+export async function fetchAllDashboardData(): Promise<FetchResult> {
+  const results = await Promise.allSettled([
+    nektQuery(NEKT_QUERIES.DASHBOARD_DIARIO),
+    nektQuery(NEKT_QUERIES.VAGAS_FECHADAS),
+    nektQuery(NEKT_QUERIES.FUNIL_SKIP_LANCAMENTO),
+    nektQuery(NEKT_QUERIES.ENTRADAS_SEM_VAGA),
+    nektQuery(NEKT_QUERIES.VENDAS_VENDEDOR_DIARIO),
+    nektQuery(NEKT_QUERIES.TRANSACOES_DETALHADO),
+  ])
 
-const FULL_PAYMENT_THRESHOLD = 9000
-
-export const fetchDashboardData = async (
-  selectedFunnels: FunnelSelection = [],
-  dateRange?: { startDate: string; endDate: string },
-): Promise<DashboardData> => {
-  let isPartial = false
-  const ff = selectedFunnels.length > 0 ? selectedFunnels : undefined
-  const applyFF = (q: any) => (ff ? q.in('funil', ff) : q)
-  const applyFilters = (q: any, dateColumn?: string) => {
-    let query = applyFF(q)
-    if (dateColumn && dateRange) {
-      if (dateRange.startDate) query = query.gte(dateColumn, dateRange.startDate)
-      if (dateRange.endDate) query = query.lte(dateColumn, dateRange.endDate + 'T23:59:59')
-    }
-    return query
-  }
-
-  const [diarioRes, agendamentoRes, funilRes, entradasRes, vendasRes, transacoesRes] =
-    await Promise.all([
-      applyFilters(
-        supabase.from('dashboard_diario_imersao').select('*').order('dia', { ascending: true }),
-        'dia',
-      ),
-      applyFilters(
-        supabase
-          .from('vagas_fechadas_agendamento')
-          .select('status_agendamento, nome, email, funil')
-          .order('data_agendamento', { ascending: false }),
-        'data_agendamento',
-      ),
-      applyFilters(supabase.from('funil_skip_vs_lancamento_interno').select('*')),
-      applyFilters(
-        supabase
-          .from('entradas_sem_vaga_hubspot')
-          .select('nome, email, dt_entrada, link_hubspot, dealstage_nome')
-          .order('dt_entrada', { ascending: false }),
-        'dt_entrada',
-      ),
-      applyFilters(
-        supabase
-          .from('vendas_vendedor_diario_imersao')
-          .select('dia, vendedor, vendas')
-          .order('dia', { ascending: false }),
-        'dia',
-      ),
-      applyFilters(
-        supabase
-          .from('transacoes_imersao_detalhado')
-          .select('valor_pago, oferta, status, estado, is_vaga_fechada, email, funil'),
-        'data_compra',
-      ),
-    ])
-
-  if (
-    diarioRes.error ||
-    agendamentoRes.error ||
-    funilRes.error ||
-    entradasRes.error ||
-    vendasRes.error ||
-    transacoesRes.error
-  ) {
-    isPartial = true
-  }
-
-  const diarioMap = new Map<string, ChartDataPoint>()
-  diarioRes.data?.forEach((row) => {
-    if (!row.dia) return
-    if (!diarioMap.has(row.dia)) {
-      diarioMap.set(row.dia, {
-        dia: row.dia,
-        entradas_realizadas: 0,
-        vagas_fechadas: 0,
-        receita_fechada: 0,
-      })
-    }
-    const e = diarioMap.get(row.dia)!
-    e.entradas_realizadas += safeNum(row.entradas_realizadas)
-    e.vagas_fechadas += safeNum(row.vagas_fechadas)
-    e.receita_fechada += safeNum(row.receita_fechada)
-  })
-  const chartData: ChartDataPoint[] = Array.from(diarioMap.values()).sort((a, b) =>
-    a.dia.localeCompare(b.dia),
-  )
-
-  let taxaAgendamento = 0
-  const agendamentosPendentes: TableAgendamentoRow[] = []
-  const agData = agendamentoRes.data || []
-  if (agData.length > 0) {
-    const relevantAg = agData.filter((a) => {
-      const s = (a.status_agendamento || '').toLowerCase()
-      return SCHEDULED_STATUSES.includes(s) || UNSCHEDULED_STATUSES.includes(s)
-    })
-    const scheduled = relevantAg.filter((a) => {
-      const s = (a.status_agendamento || '').toLowerCase()
-      return SCHEDULED_STATUSES.includes(s)
-    }).length
-    taxaAgendamento = relevantAg.length > 0 ? (scheduled / relevantAg.length) * 100 : 0
-    agData
-      .filter((a) => {
-        const s = (a.status_agendamento || '').toLowerCase()
-        return UNSCHEDULED_STATUSES.includes(s)
-      })
-      .forEach((a) =>
-        agendamentosPendentes.push({
-          nome: a.nome,
-          email: a.email,
-          status_agendamento: a.status_agendamento,
-        }),
-      )
-  }
-
-  const funilData = (funilRes.data || []).filter((r) => !ff || ff.includes(r.funil))
-  const funnelMap = new Map<string, FunnelData>()
-  funilData.forEach((row) => {
-    const name = row.funil
-    if (!funnelMap.has(name)) {
-      funnelMap.set(name, {
-        nome: name,
-        vendaProduto1: 0,
-        vendaEntrada: 0,
-        vagasFechadas: 0,
-        selfServiceQtd: 0,
-        selfServicePct: 0,
-        vendedorQtd: 0,
-        vendedorPct: 0,
-        sellers: [],
-        taxaAgendamento: 0,
-      })
-    }
-    const fd = funnelMap.get(name)!
-    fd.vendaProduto1 = Math.max(fd.vendaProduto1, safeNum(row.venda_produto1))
-    fd.vendaEntrada = Math.max(fd.vendaEntrada, safeNum(row.venda_entrada))
-    fd.vagasFechadas = Math.max(fd.vagasFechadas, safeNum(row.vagas_fechadas))
-    fd.selfServiceQtd = Math.max(fd.selfServiceQtd, safeNum(row.self_service_qtd))
-    fd.selfServicePct = Math.max(fd.selfServicePct, safeNum(row.self_service_pct))
-    fd.vendedorPct = Math.max(fd.vendedorPct, safeNum(row.vendedor_pct))
-    fd.vendedorQtd = Math.max(fd.vendedorQtd, safeNum(row.vendedor_qtd))
-    const vv = safeNum(row.vendas_do_vendedor)
-    if (row.vendedor && row.vendedor.trim() && row.vendedor !== 'NULL') {
-      fd.sellers.push({ nome: row.vendedor, vendas: vv })
-    }
-  })
-  const funnels = Array.from(funnelMap.values())
-
-  const kpiVagas = dateRange
-    ? chartData.reduce((sum, d) => sum + d.vagas_fechadas, 0)
-    : funnels.reduce((sum, f) => sum + f.vagasFechadas, 0)
-
-  let parcelado = 0,
-    aVista = 0,
-    refundCount = 0,
-    refundValor = 0,
-    kpiReceita = 0
-  let pagamentosIntegraisCount = 0
-  let pagamentosIntegraisValor = 0
-  const fullPaymentByFunil = new Map<string, { count: number; valor: number }>()
-
-  const geoEmailMap = new Map<string, Set<string>>()
-  const vendaDireta = funnels.reduce((s, f) => s + f.vendedorQtd, 0)
-
-  transacoesRes.data?.forEach((row) => {
-    const valor = safeNum(row.valor_pago)
-    const status = (row.status || '').toLowerCase()
-    if (isRefundStatus(status)) {
-      refundCount++
-      refundValor += valor
-    } else {
-      if (valor >= FULL_PAYMENT_THRESHOLD) {
-        aVista++
-        if (row.is_vaga_fechada) {
-          pagamentosIntegraisCount++
-          pagamentosIntegraisValor += valor
-          const funilName = row.funil || 'Unknown'
-          const existing = fullPaymentByFunil.get(funilName) || { count: 0, valor: 0 }
-          existing.count++
-          existing.valor += valor
-          fullPaymentByFunil.set(funilName, existing)
-        }
-      } else if (valor > 0) {
-        parcelado++
-      }
-      if (row.is_vaga_fechada) {
-        kpiReceita += valor
-      }
-    }
-    if (row.is_vaga_fechada && row.email) {
-      const estado = (row.estado || 'Não informado').trim()
-      if (!geoEmailMap.has(estado)) geoEmailMap.set(estado, new Set())
-      geoEmailMap.get(estado)!.add(row.email)
-    }
-  })
-
-  funnels.forEach((f) => {
-    const fNorm = normalizeFunil(f.nome)
-    fullPaymentByFunil.forEach((v, k) => {
-      if (normalizeFunil(k) === fNorm) {
-        f.vagasFechadas = Math.max(0, f.vagasFechadas - v.count)
-      }
-    })
-  })
-
-  const scheduledByFunil = new Map<string, number>()
-  agData.forEach((a) => {
-    const funilName = a.funil || 'Unknown'
-    const s = (a.status_agendamento || '').toLowerCase()
-    if (SCHEDULED_STATUSES.includes(s)) {
-      scheduledByFunil.set(funilName, (scheduledByFunil.get(funilName) || 0) + 1)
-    }
-  })
-
-  funnels.forEach((f) => {
-    const fNorm = normalizeFunil(f.nome)
-    let scheduled = 0
-    scheduledByFunil.forEach((count, k) => {
-      if (normalizeFunil(k) === fNorm) {
-        scheduled += count
-      }
-    })
-    f.taxaAgendamento = f.vagasFechadas > 0 ? (scheduled / f.vagasFechadas) * 100 : 0
-  })
-
-  const pmTotal = parcelado + aVista + vendaDireta
-  const geoData: GeoDataPoint[] = Array.from(geoEmailMap.entries())
-    .map(([estado, emails]) => ({ estado, count: emails.size }))
-    .sort((a, b) => b.count - a.count)
-
-  const sellerDailyMap = new Map<string, SellerDailyEntry>()
-  vendasRes.data?.forEach((row) => {
-    const key = `${row.dia}|${row.vendedor}`
-    if (!sellerDailyMap.has(key))
-      sellerDailyMap.set(key, { dia: row.dia, vendedor: row.vendedor, vendas: 0 })
-    sellerDailyMap.get(key)!.vendas += safeNum(row.vendas)
-  })
-  const sellerDailyData = Array.from(sellerDailyMap.values()).sort((a, b) => {
-    if (a.dia !== b.dia) return b.dia.localeCompare(a.dia)
-    return b.vendas - a.vendas
-  })
-  const sellerMap = new Map<string, number>()
-  sellerDailyData.forEach((e) =>
-    sellerMap.set(e.vendedor, (sellerMap.get(e.vendedor) || 0) + e.vendas),
-  )
-  const sellerRanking: SellerRankingEntry[] = Array.from(sellerMap.entries())
-    .map(([vendedor, totalVendas]) => ({ vendedor, totalVendas }))
-    .sort((a, b) => b.totalVendas - a.totalVendas)
+  const getData = (r: PromiseSettledResult<Record<string, any>[]>) =>
+    r.status === 'fulfilled' ? r.value : []
 
   return {
-    kpis: {
-      vagasFechadas: kpiVagas,
-      receitaFechada: kpiReceita,
-      entradasPendentes: entradasRes.data?.length || 0,
-      taxaAgendamento,
+    data: {
+      diario: getData(results[0]),
+      vagasFechadas: getData(results[1]),
+      funil: getData(results[2]),
+      entradasSemVaga: getData(results[3]),
+      vendasVendedor: getData(results[4]),
+      transacoes: getData(results[5]),
     },
-    funnels,
-    chartData,
-    paymentMethods: { parcelado, aVista, vendaDireta, total: pmTotal },
-    refunds: { count: refundCount, valor: refundValor },
-    pagamentosIntegrais: { count: pagamentosIntegraisCount, valor: pagamentosIntegraisValor },
-    geoData,
-    sellerRanking,
-    sellerDailyData,
-    entradasSemVaga: entradasRes.data || [],
-    agendamentosPendentes,
-    isPartial,
+    isPartial: results.some((r) => r.status === 'rejected'),
   }
 }
+
+export { processDashboardData, fetchDashboardData } from '@/services/dashboard-engine'

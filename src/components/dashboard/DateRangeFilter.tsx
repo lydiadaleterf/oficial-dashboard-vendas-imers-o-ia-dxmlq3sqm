@@ -11,22 +11,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import type { DateRange } from '@/services/dashboard'
 
-export interface DateRange {
-  startDate: string
-  endDate: string
-}
+export type { DateRange }
 
-export type QuickPeriod = '7d' | '30d' | '3m' | 'custom'
+export type QuickPeriod = '7d' | '30d' | '3m' | 'all' | 'custom'
 
 interface DateRangeFilterProps {
   activePeriod: QuickPeriod
   onPeriodChange: (period: QuickPeriod) => void
-  onDateRangeChange: (range: DateRange) => void
-  dateRange: DateRange
+  onDateRangeChange: (range: DateRange | undefined) => void
+  dateRange?: DateRange
 }
 
 const PERIOD_OPTIONS: { value: string; label: string }[] = [
+  { value: 'all', label: 'Todo o período' },
   { value: '7d', label: 'Últimos 7 dias' },
   { value: '30d', label: 'Últimos 30 dias' },
   { value: '3m', label: 'Últimos 3 meses' },
@@ -51,7 +50,11 @@ export function DateRangeFilter({
 }: DateRangeFilterProps) {
   const handlePresetChange = (value: string) => {
     onPeriodChange(value as QuickPeriod)
-    onDateRangeChange(calculatePeriodRange(value))
+    if (value === 'all') {
+      onDateRangeChange(undefined)
+    } else {
+      onDateRangeChange(calculatePeriodRange(value))
+    }
   }
 
   const handleCalendarSelect = (range: { from?: Date; to?: Date } | undefined) => {
@@ -62,12 +65,13 @@ export function DateRangeFilter({
     onDateRangeChange({ startDate, endDate })
   }
 
-  const selectedRange = {
-    from: parseISO(dateRange.startDate),
-    to: parseISO(dateRange.endDate),
-  }
+  const dateLabel = !dateRange
+    ? 'Todo o período'
+    : `${format(parseISO(dateRange.startDate), 'dd/MM/yyyy', { locale: ptBR })} — ${format(parseISO(dateRange.endDate), 'dd/MM/yyyy', { locale: ptBR })}`
 
-  const dateLabel = `${format(parseISO(dateRange.startDate), 'dd/MM/yyyy', { locale: ptBR })} — ${format(parseISO(dateRange.endDate), 'dd/MM/yyyy', { locale: ptBR })}`
+  const selectedRange = dateRange
+    ? { from: parseISO(dateRange.startDate), to: parseISO(dateRange.endDate) }
+    : undefined
 
   return (
     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">

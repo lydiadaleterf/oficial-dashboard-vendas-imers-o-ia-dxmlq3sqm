@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { useDashboardData } from '@/hooks/use-dashboard-data'
 import { useNektData } from '@/hooks/use-nekt-data'
 import { NEKT_QUERIES } from '@/services/nekt'
+import type { DateRange } from '@/services/dashboard'
 import {
   filterVagasFechadas,
   VAGAS_FECHADAS_COLUMNS,
@@ -9,6 +10,7 @@ import {
 } from '@/services/drill-down'
 import { ScorecardCards, type ScorecardItem } from '@/components/dashboard/ScorecardCards'
 import { FunnelFilter } from '@/components/dashboard/FunnelFilter'
+import { DateRangeFilter, type QuickPeriod } from '@/components/dashboard/DateRangeFilter'
 import { DrillDownDialog } from '@/components/dashboard/DrillDownDialog'
 import { Skeleton } from '@/components/ui/skeleton'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
@@ -27,11 +29,11 @@ import {
 export default function Geral() {
   const [selectedFunnels, setSelectedFunnels] = useState<string[]>([])
   const [drillDownType, setDrillDownType] = useState<DrillDownType | null>(null)
+  const [activePeriod, setActivePeriod] = useState<QuickPeriod>('all')
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
 
-  const { data, loading, error, refresh } = useDashboardData(selectedFunnels)
-  const { data: vagasFechadasData, loading: vagasLoading } = useNektData(
-    NEKT_QUERIES.VAGAS_FECHADAS,
-  )
+  const { data, loading, refreshing, error, refresh } = useDashboardData(selectedFunnels, dateRange)
+  const { data: vagasFechadasData } = useNektData(NEKT_QUERIES.VAGAS_FECHADAS)
 
   const filteredVagasFechadas = useMemo(
     () => filterVagasFechadas(vagasFechadasData, selectedFunnels),
@@ -78,7 +80,7 @@ export default function Geral() {
   const ticketMedio =
     data.kpis.vagasFechadas > 0 ? data.kpis.receitaFechada / data.kpis.vagasFechadas : 0
 
-  const vagasFechadasCount = vagasLoading ? data.kpis.vagasFechadas : filteredVagasFechadas.length
+  const vagasFechadasCount = filteredVagasFechadas.length || data.kpis.vagasFechadas
 
   const items: ScorecardItem[] = [
     {
@@ -134,14 +136,26 @@ export default function Geral() {
           </h1>
           <p className="text-sm text-slate-500 mt-0.5">Visão consolidada de todos os negócios</p>
         </div>
-        <Button variant="outline" size="sm" onClick={refresh} className="shrink-0">
-          <RefreshCw className="w-4 h-4 mr-2" />
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={refresh}
+          disabled={refreshing}
+          className="shrink-0"
+        >
+          <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
           Atualizar
         </Button>
       </div>
 
-      <div className="mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <FunnelFilter selected={selectedFunnels} onChange={setSelectedFunnels} />
+        <DateRangeFilter
+          activePeriod={activePeriod}
+          onPeriodChange={setActivePeriod}
+          onDateRangeChange={setDateRange}
+          dateRange={dateRange}
+        />
       </div>
 
       {data.isPartial && (
