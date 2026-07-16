@@ -102,8 +102,10 @@ export async function fetchDrillDownData(
     case 'receita': {
       let query = supabase
         .from('transacoes_imersao_detalhado')
-        .select('nome, email, valor_pago, oferta, data_compra, funil')
+        .select('nome, email, valor_pago, oferta, data_compra, funil, status')
         .eq('is_vaga_fechada', true)
+        .not('status', 'ilike', '%reembol%')
+        .not('status', 'ilike', '%refund%')
 
       if (selectedFunnels.length > 0) {
         query = query.in('funil', selectedFunnels)

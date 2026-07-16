@@ -174,13 +174,9 @@ export const fetchDashboardData = async (
     e.vagas_fechadas += safeNum(row.vagas_fechadas)
     e.receita_fechada += safeNum(row.receita_fechada)
   })
-  let kpiReceita = 0
   const chartData: ChartDataPoint[] = Array.from(diarioMap.values()).sort((a, b) =>
     a.dia.localeCompare(b.dia),
   )
-  chartData.forEach((e) => {
-    kpiReceita += e.receita_fechada
-  })
 
   console.debug(
     '[Dashboard] aggregated receita from diario:',
@@ -251,7 +247,8 @@ export const fetchDashboardData = async (
   let parcelado = 0,
     aVista = 0,
     refundCount = 0,
-    refundValor = 0
+    refundValor = 0,
+    kpiReceita = 0
   const geoEmailMap = new Map<string, Set<string>>()
   const vendaDireta = funnels.reduce((s, f) => s + f.vendedorQtd, 0)
   transacoesRes.data?.forEach((row) => {
@@ -260,8 +257,13 @@ export const fetchDashboardData = async (
     if (isRefundStatus(status)) {
       refundCount++
       refundValor += valor
-    } else if (valor >= 9000) aVista++
-    else if (valor > 0) parcelado++
+    } else {
+      if (valor >= 9000) aVista++
+      else if (valor > 0) parcelado++
+      if (row.is_vaga_fechada) {
+        kpiReceita += valor
+      }
+    }
     if (row.is_vaga_fechada && row.email) {
       const estado = (row.estado || 'Não informado').trim()
       if (!geoEmailMap.has(estado)) geoEmailMap.set(estado, new Set())
