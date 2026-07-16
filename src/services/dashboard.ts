@@ -178,13 +178,6 @@ export const fetchDashboardData = async (
     a.dia.localeCompare(b.dia),
   )
 
-  console.debug(
-    '[Dashboard] aggregated receita from diario:',
-    kpiReceita,
-    'chartData points:',
-    chartData.length,
-  )
-
   let taxaAgendamento = 0
   const agendamentosPendentes: TableAgendamentoRow[] = []
   const agData = agendamentoRes.data || []
@@ -249,6 +242,13 @@ export const fetchDashboardData = async (
     refundCount = 0,
     refundValor = 0,
     kpiReceita = 0
+
+  console.debug(
+    '[Dashboard] aggregated receita from diario:',
+    kpiReceita,
+    'chartData points:',
+    chartData.length,
+  )
   const geoEmailMap = new Map<string, Set<string>>()
   const vendaDireta = funnels.reduce((s, f) => s + f.vendedorQtd, 0)
   transacoesRes.data?.forEach((row) => {
