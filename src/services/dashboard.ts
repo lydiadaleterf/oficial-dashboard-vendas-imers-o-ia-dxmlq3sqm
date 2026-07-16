@@ -8,6 +8,7 @@ export interface DateRange {
 }
 
 export interface KPIData {
+  entradas: number
   vagasFechadas: number
   receitaFechada: number
   entradasPendentes: number

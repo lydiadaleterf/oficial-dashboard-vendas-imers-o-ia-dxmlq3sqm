@@ -231,7 +231,9 @@ export function processDashboardData(
     return !closedEmails.has(email)
   })
 
-  const kpiVagas = vagasFechadas.length
+  const totalEntradas = funnels.reduce((s, f) => s + f.vendaEntrada, 0)
+  const totalVagasFechadas = funnels.reduce((s, f) => s + f.vagasFechadas, 0)
+  const kpiEntradasPendentes = Math.max(0, totalEntradas - totalVagasFechadas)
   const pmTotal = parcelado + aVista + vendaDireta
   const geoData: GeoDataPoint[] = Array.from(geoEmailMap.entries())
     .map(([estado, emails]) => ({ estado, count: emails.size }))
@@ -258,9 +260,10 @@ export function processDashboardData(
 
   return {
     kpis: {
-      vagasFechadas: kpiVagas,
+      entradas: totalEntradas,
+      vagasFechadas: totalVagasFechadas,
       receitaFechada: kpiReceita,
-      entradasPendentes: entradasPendentesFiltered.length,
+      entradasPendentes: kpiEntradasPendentes,
       taxaAgendamento,
     },
     funnels,
