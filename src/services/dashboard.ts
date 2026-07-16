@@ -91,6 +91,12 @@ export interface DashboardData {
 
 const isRefundStatus = (s: string) => s.includes('reembol') || s.includes('refund')
 
+const safeNum = (val: unknown): number => {
+  if (val === null || val === undefined || val === '' || val === 'null' || val === 'NULL') return 0
+  const n = Number(val)
+  return Number.isFinite(n) ? n : 0
+}
+
 export const fetchDashboardData = async (
   selectedFunnels: FunnelSelection = [],
 ): Promise<DashboardData> => {
@@ -164,24 +170,20 @@ export const fetchDashboardData = async (
       })
     }
     const e = diarioMap.get(row.dia)!
-    e.entradas_realizadas += Number(row.entradas_realizadas || 0)
-    e.vagas_fechadas += Number(row.vagas_fechadas || 0)
-    e.receita_fechada += Number(row.receita_fechada || 0)
+    e.entradas_realizadas += safeNum(row.entradas_realizadas)
+    e.vagas_fechadas += safeNum(row.vagas_fechadas)
+    e.receita_fechada += safeNum(row.receita_fechada)
   })
-  let kpiVagas = 0,
-    kpiReceita = 0
+  let kpiReceita = 0
   const chartData: ChartDataPoint[] = Array.from(diarioMap.values()).sort((a, b) =>
     a.dia.localeCompare(b.dia),
   )
   chartData.forEach((e) => {
-    kpiVagas += e.vagas_fechadas
     kpiReceita += e.receita_fechada
   })
 
   console.debug(
-    '[Dashboard] aggregated KPIs - vagas:',
-    kpiVagas,
-    'receita:',
+    '[Dashboard] aggregated receita from diario:',
     kpiReceita,
     'chartData points:',
     chartData.length,
@@ -224,19 +226,27 @@ export const fetchDashboardData = async (
       })
     }
     const fd = funnelMap.get(name)!
-    fd.vendaProduto1 = Math.max(fd.vendaProduto1, Number(row.venda_produto1 || 0))
-    fd.vendaEntrada = Math.max(fd.vendaEntrada, Number(row.venda_entrada || 0))
-    fd.vagasFechadas = Math.max(fd.vagasFechadas, Number(row.vagas_fechadas || 0))
-    fd.selfServiceQtd = Math.max(fd.selfServiceQtd, Number(row.self_service_qtd || 0))
-    fd.selfServicePct = Math.max(fd.selfServicePct, Number(row.self_service_pct || 0))
-    fd.vendedorPct = Math.max(fd.vendedorPct, Number(row.vendedor_pct || 0))
-    fd.vendedorQtd = Math.max(fd.vendedorQtd, Number(row.vendedor_qtd || 0))
-    const vv = Number(row.vendas_do_vendedor || 0)
+    fd.vendaProduto1 = Math.max(fd.vendaProduto1, safeNum(row.venda_produto1))
+    fd.vendaEntrada = Math.max(fd.vendaEntrada, safeNum(row.venda_entrada))
+    fd.vagasFechadas = Math.max(fd.vagasFechadas, safeNum(row.vagas_fechadas))
+    fd.selfServiceQtd = Math.max(fd.selfServiceQtd, safeNum(row.self_service_qtd))
+    fd.selfServicePct = Math.max(fd.selfServicePct, safeNum(row.self_service_pct))
+    fd.vendedorPct = Math.max(fd.vendedorPct, safeNum(row.vendedor_pct))
+    fd.vendedorQtd = Math.max(fd.vendedorQtd, safeNum(row.vendedor_qtd))
+    const vv = safeNum(row.vendas_do_vendedor)
     if (row.vendedor && row.vendedor.trim() && row.vendedor !== 'NULL') {
       fd.sellers.push({ nome: row.vendedor, vendas: vv })
     }
   })
   const funnels = Array.from(funnelMap.values())
+  const kpiVagas = funnels.reduce((sum, f) => sum + f.vagasFechadas, 0)
+  console.debug(
+    '[Dashboard] KPI vagasFechadas from funil_skip_vs_lancamento_interno:',
+    kpiVagas,
+    'funnels:',
+    funnels.length,
+    funnels.map((f) => ({ nome: f.nome, vagasFechadas: f.vagasFechadas })),
+  )
 
   let parcelado = 0,
     aVista = 0,
@@ -245,7 +255,7 @@ export const fetchDashboardData = async (
   const geoEmailMap = new Map<string, Set<string>>()
   const vendaDireta = funnels.reduce((s, f) => s + f.vendedorQtd, 0)
   transacoesRes.data?.forEach((row) => {
-    const valor = Number(row.valor_pago || 0)
+    const valor = safeNum(row.valor_pago)
     const status = (row.status || '').toLowerCase()
     if (isRefundStatus(status)) {
       refundCount++
@@ -268,7 +278,7 @@ export const fetchDashboardData = async (
     const key = `${row.dia}|${row.vendedor}`
     if (!sellerDailyMap.has(key))
       sellerDailyMap.set(key, { dia: row.dia, vendedor: row.vendedor, vendas: 0 })
-    sellerDailyMap.get(key)!.vendas += Number(row.vendas || 0)
+    sellerDailyMap.get(key)!.vendas += safeNum(row.vendas)
   })
   const sellerDailyData = Array.from(sellerDailyMap.values()).sort((a, b) => {
     if (a.dia !== b.dia) return b.dia.localeCompare(a.dia)
