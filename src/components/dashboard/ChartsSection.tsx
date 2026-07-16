@@ -44,6 +44,8 @@ function EmptyChartState({ title, subtitle }: { title: string; subtitle?: string
 }
 
 export function ChartsSection({ data, geoData }: ChartsSectionProps) {
+  const useShortLabels = data.length > 40
+
   const allData = data.map((d) => ({
     ...d,
     diaFormatted: d.dia
@@ -52,7 +54,6 @@ export function ChartsSection({ data, geoData }: ChartsSectionProps) {
   }))
 
   const xAxisInterval = allData.length > 20 ? Math.floor(allData.length / 12) : 0
-  const useShortLabels = allData.length > 40
 
   const formatCurrencyAxis = (value: number) => {
     if (value >= 1000) return `R$ ${(value / 1000).toFixed(0)}k`
