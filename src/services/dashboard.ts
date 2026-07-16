@@ -45,6 +45,11 @@ export interface RefundData {
   valor: number
 }
 
+export interface PagamentosIntegraisData {
+  count: number
+  valor: number
+}
+
 export interface GeoDataPoint {
   estado: string
   count: number
@@ -81,6 +86,7 @@ export interface DashboardData {
   chartData: ChartDataPoint[]
   paymentMethods: PaymentMethodData
   refunds: RefundData
+  pagamentosIntegrais: PagamentosIntegraisData
   geoData: GeoDataPoint[]
   sellerRanking: SellerRankingEntry[]
   sellerDailyData: SellerDailyEntry[]
@@ -97,6 +103,17 @@ const safeNum = (val: unknown): number => {
   return Number.isFinite(n) ? n : 0
 }
 
+const normalizeFunil = (s: string): string =>
+  s
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+
+const SCHEDULED_STATUSES = ['confirmed', 'agendado', 'scheduled', 'confirmado']
+const UNSCHEDULED_STATUSES = ['nao_agendou', 'nao_agendado', 'not_scheduled', 'no_show']
+
+const FULL_PAYMENT_THRESHOLD = 9000
+
 export const fetchDashboardData = async (
   selectedFunnels: FunnelSelection = [],
   dateRange?: { startDate: string; endDate: string },
@@ -112,11 +129,6 @@ export const fetchDashboardData = async (
     }
     return query
   }
-
-  console.debug(
-    '[Dashboard] selectedFunnels (technical/unaccented values):',
-    JSON.stringify(selectedFunnels),
-  )
 
   const [diarioRes, agendamentoRes, funilRes, entradasRes, vendasRes, transacoesRes] =
     await Promise.all([
@@ -149,7 +161,7 @@ export const fetchDashboardData = async (
       applyFilters(
         supabase
           .from('transacoes_imersao_detalhado')
-          .select('valor_pago, oferta, status, estado, is_vaga_fechada, email'),
+          .select('valor_pago, oferta, status, estado, is_vaga_fechada, email, funil'),
         'data_compra',
       ),
     ])
@@ -164,14 +176,6 @@ export const fetchDashboardData = async (
   ) {
     isPartial = true
   }
-
-  console.debug('=== RAW funil_skip_vs_lancamento_interno ===', JSON.stringify(funilRes.data))
-  console.debug('=== RAW dashboard_diario_imersao (filtrado) ===', JSON.stringify(diarioRes.data))
-
-  console.debug('[Dashboard] selectedFunnels:', selectedFunnels)
-  console.debug('[Dashboard] diario rows count:', diarioRes.data?.length ?? 0)
-  const distinctFunnels = [...new Set(diarioRes.data?.map((r) => r.funil).filter(Boolean) ?? [])]
-  console.debug('[Dashboard] distinct funnels in diario data:', distinctFunnels)
 
   const diarioMap = new Map<string, ChartDataPoint>()
   diarioRes.data?.forEach((row) => {
@@ -197,12 +201,20 @@ export const fetchDashboardData = async (
   const agendamentosPendentes: TableAgendamentoRow[] = []
   const agData = agendamentoRes.data || []
   if (agData.length > 0) {
-    const confirmed = agData.filter(
-      (a) => a.status_agendamento?.toLowerCase() === 'confirmed',
-    ).length
-    taxaAgendamento = (confirmed / agData.length) * 100
+    const relevantAg = agData.filter((a) => {
+      const s = (a.status_agendamento || '').toLowerCase()
+      return SCHEDULED_STATUSES.includes(s) || UNSCHEDULED_STATUSES.includes(s)
+    })
+    const scheduled = relevantAg.filter((a) => {
+      const s = (a.status_agendamento || '').toLowerCase()
+      return SCHEDULED_STATUSES.includes(s)
+    }).length
+    taxaAgendamento = relevantAg.length > 0 ? (scheduled / relevantAg.length) * 100 : 0
     agData
-      .filter((a) => a.status_agendamento?.toLowerCase() === 'nao_agendou')
+      .filter((a) => {
+        const s = (a.status_agendamento || '').toLowerCase()
+        return UNSCHEDULED_STATUSES.includes(s)
+      })
       .forEach((a) =>
         agendamentosPendentes.push({
           nome: a.nome,
@@ -243,31 +255,23 @@ export const fetchDashboardData = async (
     }
   })
   const funnels = Array.from(funnelMap.values())
+
   const kpiVagas = dateRange
     ? chartData.reduce((sum, d) => sum + d.vagas_fechadas, 0)
     : funnels.reduce((sum, f) => sum + f.vagasFechadas, 0)
-  console.debug(
-    '[Dashboard] KPI vagasFechadas from funil_skip_vs_lancamento_interno:',
-    kpiVagas,
-    'funnels:',
-    funnels.length,
-    funnels.map((f) => ({ nome: f.nome, vagasFechadas: f.vagasFechadas })),
-  )
 
   let parcelado = 0,
     aVista = 0,
     refundCount = 0,
     refundValor = 0,
     kpiReceita = 0
+  let pagamentosIntegraisCount = 0
+  let pagamentosIntegraisValor = 0
+  const fullPaymentByFunil = new Map<string, { count: number; valor: number }>()
 
-  console.debug(
-    '[Dashboard] aggregated receita from diario:',
-    kpiReceita,
-    'chartData points:',
-    chartData.length,
-  )
   const geoEmailMap = new Map<string, Set<string>>()
   const vendaDireta = funnels.reduce((s, f) => s + f.vendedorQtd, 0)
+
   transacoesRes.data?.forEach((row) => {
     const valor = safeNum(row.valor_pago)
     const status = (row.status || '').toLowerCase()
@@ -275,8 +279,20 @@ export const fetchDashboardData = async (
       refundCount++
       refundValor += valor
     } else {
-      if (valor >= 9000) aVista++
-      else if (valor > 0) parcelado++
+      if (valor >= FULL_PAYMENT_THRESHOLD) {
+        aVista++
+        if (row.is_vaga_fechada) {
+          pagamentosIntegraisCount++
+          pagamentosIntegraisValor += valor
+          const funilName = row.funil || 'Unknown'
+          const existing = fullPaymentByFunil.get(funilName) || { count: 0, valor: 0 }
+          existing.count++
+          existing.valor += valor
+          fullPaymentByFunil.set(funilName, existing)
+        }
+      } else if (valor > 0) {
+        parcelado++
+      }
       if (row.is_vaga_fechada) {
         kpiReceita += valor
       }
@@ -287,6 +303,16 @@ export const fetchDashboardData = async (
       geoEmailMap.get(estado)!.add(row.email)
     }
   })
+
+  funnels.forEach((f) => {
+    const fNorm = normalizeFunil(f.nome)
+    fullPaymentByFunil.forEach((v, k) => {
+      if (normalizeFunil(k) === fNorm) {
+        f.vagasFechadas = Math.max(0, f.vagasFechadas - v.count)
+      }
+    })
+  })
+
   const pmTotal = parcelado + aVista + vendaDireta
   const geoData: GeoDataPoint[] = Array.from(geoEmailMap.entries())
     .map(([estado, emails]) => ({ estado, count: emails.size }))
@@ -322,6 +348,7 @@ export const fetchDashboardData = async (
     chartData,
     paymentMethods: { parcelado, aVista, vendaDireta, total: pmTotal },
     refunds: { count: refundCount, valor: refundValor },
+    pagamentosIntegrais: { count: pagamentosIntegraisCount, valor: pagamentosIntegraisValor },
     geoData,
     sellerRanking,
     sellerDailyData,

@@ -1,12 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { FunnelData } from '@/services/dashboard'
+import { FunnelData, PagamentosIntegraisData } from '@/services/dashboard'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { ArrowDown } from 'lucide-react'
+import { ArrowDown, Banknote } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getFunnelLabel } from '@/lib/funnel-labels'
 
 interface FunnelSectionProps {
   funnels: FunnelData[]
+  pagamentosIntegrais: PagamentosIntegraisData
 }
 
 type TrapezoidDirection = 'narrow' | 'widen' | 'flat'
@@ -69,14 +70,59 @@ function ConversionArrow({ pct }: { pct: number }) {
   )
 }
 
-export function FunnelSection({ funnels }: FunnelSectionProps) {
+function PagamentosIntegraisCard({ data }: { data: PagamentosIntegraisData }) {
+  const formatCurrency = (val: number) =>
+    new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      maximumFractionDigits: 0,
+    }).format(val)
+
   return (
-    <div
-      className={cn(
-        'grid gap-6 mb-6',
-        funnels.length === 1 ? 'grid-cols-1 max-w-md mx-auto' : 'grid-cols-1 lg:grid-cols-2',
-      )}
+    <Card
+      className="shadow-subtle border-indigo-200 bg-gradient-to-br from-indigo-50 to-white animate-fade-in-up"
+      style={{ animationDelay: '150ms' }}
     >
+      <CardHeader className="pb-2 border-b bg-indigo-50/50">
+        <CardTitle className="text-lg font-semibold text-indigo-800 uppercase tracking-wide flex items-center gap-2">
+          <Banknote className="w-5 h-5 text-indigo-600" />
+          Pagamentos Integrais
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-6">
+        <div className="flex flex-col items-center justify-center space-y-3 h-full">
+          <div className="text-center">
+            <p className="text-xs font-medium text-indigo-500 uppercase tracking-wider mb-1">
+              Vagas Pagas (Sem Entrada)
+            </p>
+            <p className="text-4xl font-bold text-indigo-700">{data.count}</p>
+          </div>
+          <div className="w-full pt-3 border-t border-indigo-100">
+            <p className="text-xs text-slate-500 text-center mb-1">Valor Total</p>
+            <p className="text-xl font-semibold text-indigo-600 text-center">
+              {formatCurrency(data.valor)}
+            </p>
+          </div>
+          <p className="text-xs text-slate-400 text-center italic">
+            Pagamentos integrais excluídos do funil
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+export function FunnelSection({ funnels, pagamentosIntegrais }: FunnelSectionProps) {
+  const hasPagamentos = pagamentosIntegrais.count > 0
+  const gridClass = cn(
+    'grid gap-6 mb-6',
+    funnels.length === 1 && !hasPagamentos
+      ? 'grid-cols-1 max-w-md mx-auto'
+      : 'grid-cols-1 lg:grid-cols-2',
+  )
+
+  return (
+    <div className={gridClass}>
       {funnels.map((funnel) => {
         const isSkip = funnel.nome.toLowerCase().includes('skip')
         const maxVal = Math.max(funnel.vendaProduto1, funnel.vendaEntrada, funnel.vagasFechadas, 1)
@@ -213,7 +259,10 @@ export function FunnelSection({ funnels }: FunnelSectionProps) {
           </Card>
         )
       })}
-      {funnels.length === 0 && (
+
+      {hasPagamentos && <PagamentosIntegraisCard data={pagamentosIntegrais} />}
+
+      {funnels.length === 0 && !hasPagamentos && (
         <Card className="col-span-1 lg:col-span-2 border-dashed bg-slate-50">
           <CardContent className="py-10 text-center text-slate-500">
             Nenhum dado de funil disponível no momento.
