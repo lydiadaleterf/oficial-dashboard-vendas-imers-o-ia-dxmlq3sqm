@@ -5,7 +5,7 @@ export type DrillDownType = 'vagas-fechadas' | 'receita' | 'entradas-pendentes' 
 export interface DrillDownColumn {
   key: string
   label: string
-  format?: 'currency' | 'date'
+  format?: 'currency' | 'date' | 'link'
 }
 
 export interface DrillDownResult {
@@ -34,11 +34,36 @@ function formatCurrency(val: any): string {
   }).format(num)
 }
 
-export function formatCellValue(val: any, format?: 'currency' | 'date'): string {
+export function formatCellValue(val: any, format?: 'currency' | 'date' | 'link'): string {
   if (val === null || val === undefined) return '-'
   if (format === 'currency') return formatCurrency(val)
   if (format === 'date') return formatDate(val)
+  if (format === 'link') return String(val)
   return String(val)
+}
+
+export const VAGAS_FECHADAS_COLUMNS: DrillDownColumn[] = [
+  { key: 'nome', label: 'Nome' },
+  { key: 'email', label: 'Email' },
+  { key: 'doc', label: 'Documento' },
+  { key: 'funil', label: 'Funil' },
+  { key: 'data_vaga_fechada', label: 'Data Vaga Fechada', format: 'date' },
+  { key: 'link_guru', label: 'Link Guru', format: 'link' },
+  { key: 'status_agendamento', label: 'Status Agendamento' },
+]
+
+export function filterVagasFechadas(
+  records: Record<string, any>[],
+  selectedFunnels: string[],
+): Record<string, any>[] {
+  if (!selectedFunnels || selectedFunnels.length === 0) {
+    return records
+  }
+  return records.filter((r) => {
+    const funil = r?.funil
+    if (!funil || funil === '') return false
+    return selectedFunnels.includes(funil)
+  })
 }
 
 export async function fetchDrillDownData(type: DrillDownType): Promise<DrillDownResult> {

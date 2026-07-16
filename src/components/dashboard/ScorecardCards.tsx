@@ -7,6 +7,7 @@ export interface ScorecardItem {
   value: string
   icon: LucideIcon
   color: string
+  onClick?: () => void
 }
 
 interface ScorecardCardsProps {
@@ -56,8 +57,9 @@ export function ScorecardCards({ data, items }: ScorecardCardsProps) {
           return (
             <Card
               key={item.label}
-              className={`shadow-subtle border-t-4 ${colorMap[item.color] || colorMap.slate} animate-fade-in-up`}
+              className={`shadow-subtle border-t-4 ${colorMap[item.color] || colorMap.slate} animate-fade-in-up ${item.onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
               style={{ animationDelay: `${idx * 50}ms` }}
+              onClick={item.onClick}
             >
               <CardContent className="p-4 flex flex-col justify-between h-full">
                 <div className="flex justify-between items-start mb-2">

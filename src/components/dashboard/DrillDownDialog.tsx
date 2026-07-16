@@ -21,18 +21,28 @@ import {
 interface DrillDownDialogProps {
   type: DrillDownType | null
   onClose: () => void
+  preloadedRecords?: Record<string, any>[]
+  preloadedColumns?: DrillDownColumn[]
+  preloadedTitle?: string
 }
 
-export function DrillDownDialog({ type, onClose }: DrillDownDialogProps) {
+export function DrillDownDialog({
+  type,
+  onClose,
+  preloadedRecords,
+  preloadedColumns,
+  preloadedTitle,
+}: DrillDownDialogProps) {
   const [loading, setLoading] = useState(false)
   const [title, setTitle] = useState('')
   const [columns, setColumns] = useState<DrillDownColumn[]>([])
   const [records, setRecords] = useState<Record<string, any>[]>([])
 
   const open = type !== null
+  const usePreloaded = type === 'vagas-fechadas' && preloadedRecords !== undefined
 
   const loadData = useCallback(async () => {
-    if (!type) return
+    if (!type || usePreloaded) return
     setLoading(true)
     try {
       const result = await fetchDrillDownData(type)
@@ -46,13 +56,18 @@ export function DrillDownDialog({ type, onClose }: DrillDownDialogProps) {
     } finally {
       setLoading(false)
     }
-  }, [type])
+  }, [type, usePreloaded])
 
   useEffect(() => {
-    if (type) {
+    if (usePreloaded) {
+      setLoading(false)
+      setTitle(preloadedTitle ?? '')
+      setColumns(preloadedColumns ?? [])
+      setRecords(preloadedRecords ?? [])
+    } else if (type) {
       loadData()
     }
-  }, [type, loadData])
+  }, [type, usePreloaded, preloadedRecords, preloadedColumns, preloadedTitle, loadData])
 
   const safeColumns = columns ?? []
   const safeRecords = records ?? []
@@ -102,7 +117,18 @@ export function DrillDownDialog({ type, onClose }: DrillDownDialogProps) {
                   <TableRow key={i} className="hover:bg-slate-50">
                     {safeColumns.map((col) => (
                       <TableCell key={col.key} className="text-sm text-slate-700">
-                        {formatCellValue(record?.[col.key], col.format)}
+                        {col.format === 'link' && record?.[col.key] ? (
+                          <a
+                            href={record[col.key]}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline"
+                          >
+                            Abrir link
+                          </a>
+                        ) : (
+                          formatCellValue(record?.[col.key], col.format)
+                        )}
                       </TableCell>
                     ))}
                   </TableRow>

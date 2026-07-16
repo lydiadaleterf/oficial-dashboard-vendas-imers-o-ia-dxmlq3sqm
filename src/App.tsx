@@ -4,6 +4,7 @@ import { Toaster as Sonner } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import Index from './pages/Index'
 import General from './pages/General'
+import Geral from './pages/Geral'
 import AdaptaNative from './pages/AdaptaNative'
 import Login from './pages/Login'
 import NotFound from './pages/NotFound'
@@ -20,6 +21,7 @@ const App = () => (
           <Route path="/login" element={<Login />} />
           <Route element={<Layout />}>
             <Route path="/" element={<General />} />
+            <Route path="/geral" element={<Geral />} />
             <Route path="/imersao" element={<Index />} />
             <Route path="/adapta-native" element={<AdaptaNative />} />
           </Route>

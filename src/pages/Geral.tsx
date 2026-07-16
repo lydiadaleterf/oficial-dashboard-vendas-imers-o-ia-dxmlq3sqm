@@ -1,5 +1,15 @@
+import { useState, useMemo } from 'react'
 import { useDashboardData } from '@/hooks/use-dashboard-data'
+import { useNektData } from '@/hooks/use-nekt-data'
+import { NEKT_QUERIES } from '@/services/nekt'
+import {
+  filterVagasFechadas,
+  VAGAS_FECHADAS_COLUMNS,
+  type DrillDownType,
+} from '@/services/drill-down'
 import { ScorecardCards, type ScorecardItem } from '@/components/dashboard/ScorecardCards'
+import { FunnelFilter } from '@/components/dashboard/FunnelFilter'
+import { DrillDownDialog } from '@/components/dashboard/DrillDownDialog'
 import { Skeleton } from '@/components/ui/skeleton'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -15,12 +25,24 @@ import {
 } from 'lucide-react'
 
 export default function Geral() {
-  const { data, loading, error, refresh } = useDashboardData([])
+  const [selectedFunnels, setSelectedFunnels] = useState<string[]>([])
+  const [drillDownType, setDrillDownType] = useState<DrillDownType | null>(null)
+
+  const { data, loading, error, refresh } = useDashboardData(selectedFunnels)
+  const { data: vagasFechadasData, loading: vagasLoading } = useNektData(
+    NEKT_QUERIES.VAGAS_FECHADAS,
+  )
+
+  const filteredVagasFechadas = useMemo(
+    () => filterVagasFechadas(vagasFechadasData, selectedFunnels),
+    [vagasFechadasData, selectedFunnels],
+  )
 
   if (loading) {
     return (
       <div className="space-y-6 p-4 md:p-6 max-w-7xl mx-auto">
         <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-10 w-full max-w-md" />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {Array.from({ length: 8 }).map((_, i) => (
             <Skeleton key={i} className="h-28 rounded-xl" />
@@ -56,6 +78,8 @@ export default function Geral() {
   const ticketMedio =
     data.kpis.vagasFechadas > 0 ? data.kpis.receitaFechada / data.kpis.vagasFechadas : 0
 
+  const vagasFechadasCount = vagasLoading ? data.kpis.vagasFechadas : filteredVagasFechadas.length
+
   const items: ScorecardItem[] = [
     {
       label: 'Receita Total',
@@ -65,9 +89,10 @@ export default function Geral() {
     },
     {
       label: 'Vagas Fechadas',
-      value: data.kpis.vagasFechadas.toLocaleString('pt-BR'),
+      value: vagasFechadasCount.toLocaleString('pt-BR'),
       icon: CheckCircle,
       color: 'teal',
+      onClick: () => setDrillDownType('vagas-fechadas'),
     },
     {
       label: 'Entradas Pendentes',
@@ -97,6 +122,9 @@ export default function Geral() {
     { label: 'Ticket Médio', value: formatCurrency(ticketMedio), icon: Ticket, color: 'purple' },
   ]
 
+  const funnelLabel = selectedFunnels.length > 0 ? selectedFunnels.join(', ') : 'Todos'
+  const drillDownTitle = `Vagas Fechadas — ${funnelLabel}`
+
   return (
     <div className="space-y-2 p-4 md:p-6 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
@@ -112,6 +140,10 @@ export default function Geral() {
         </Button>
       </div>
 
+      <div className="mb-4">
+        <FunnelFilter selected={selectedFunnels} onChange={setSelectedFunnels} />
+      </div>
+
       {data.isPartial && (
         <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-2 animate-fade-in">
           <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
@@ -122,6 +154,14 @@ export default function Geral() {
       )}
 
       <ScorecardCards items={items} />
+
+      <DrillDownDialog
+        type={drillDownType}
+        onClose={() => setDrillDownType(null)}
+        preloadedRecords={filteredVagasFechadas}
+        preloadedColumns={VAGAS_FECHADAS_COLUMNS}
+        preloadedTitle={drillDownTitle}
+      />
     </div>
   )
 }
