@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, ExternalLink } from 'lucide-react'
 import {
   DrillDownType,
   DrillDownColumn,
@@ -124,9 +124,10 @@ export function DrillDownDialog({
                             href={record[col.key]}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline"
+                            className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:underline"
                           >
-                            Abrir link
+                            {col.linkLabel || 'Abrir link'}
+                            <ExternalLink className="w-3 h-3" />
                           </a>
                         ) : (
                           formatCellValue(record?.[col.key], col.format)

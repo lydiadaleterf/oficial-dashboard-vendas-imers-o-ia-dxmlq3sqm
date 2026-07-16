@@ -7,6 +7,7 @@ export interface DrillDownColumn {
   key: string
   label: string
   format?: 'currency' | 'date' | 'link'
+  linkLabel?: string
 }
 
 export interface DrillDownResult {
@@ -49,7 +50,8 @@ export const VAGAS_FECHADAS_COLUMNS: DrillDownColumn[] = [
   { key: 'doc', label: 'Documento' },
   { key: 'funil', label: 'Funil' },
   { key: 'data_vaga_fechada', label: 'Data Vaga Fechada', format: 'date' },
-  { key: 'link_guru', label: 'Link Guru', format: 'link' },
+  { key: 'link_guru', label: 'Guru', format: 'link', linkLabel: 'Ver no Guru' },
+  { key: 'link_hubspot', label: 'HubSpot', format: 'link', linkLabel: 'Ver no HubSpot' },
   { key: 'status_agendamento', label: 'Status Agendamento' },
 ]
 
@@ -80,13 +82,34 @@ export async function fetchDrillDownData(
     case 'vagas-fechadas': {
       let query = supabase
         .from('vagas_fechadas_agendamento')
-        .select('nome, email, funil, data_vaga_fechada, status_agendamento')
+        .select('nome, email, funil, data_vaga_fechada, status_agendamento, link_guru')
 
       if (selectedFunnels.length > 0) {
         query = query.in('funil', selectedFunnels)
       }
 
       const { data } = await query.order('data_vaga_fechada', { ascending: false })
+
+      const emails = (data || []).map((r) => r?.email).filter(Boolean)
+      const hubspotMap: Record<string, string> = {}
+      if (emails.length > 0) {
+        const { data: hubspotData } = await supabase
+          .from('transacoes_imersao_detalhado')
+          .select('email, link_hubspot')
+          .in('email', emails)
+          .not('link_hubspot', 'is', null)
+        for (const row of hubspotData || []) {
+          if (row?.email && row?.link_hubspot && !hubspotMap[row.email]) {
+            hubspotMap[row.email] = row.link_hubspot
+          }
+        }
+      }
+
+      const mergedRecords = (data || []).map((r) => ({
+        ...r,
+        link_hubspot: r?.email ? hubspotMap[r.email] || null : null,
+      }))
+
       return {
         title: 'Vagas Fechadas — Detalhamento' + funnelLabelSuffix,
         columns: [
@@ -94,15 +117,24 @@ export async function fetchDrillDownData(
           { key: 'email', label: 'Email' },
           { key: 'funil', label: 'Funil' },
           { key: 'data_vaga_fechada', label: 'Data Vaga Fechada', format: 'date' as const },
+          { key: 'link_guru', label: 'Guru', format: 'link' as const, linkLabel: 'Ver no Guru' },
+          {
+            key: 'link_hubspot',
+            label: 'HubSpot',
+            format: 'link' as const,
+            linkLabel: 'Ver no HubSpot',
+          },
           { key: 'status_agendamento', label: 'Status Agendamento' },
         ],
-        records: data || [],
+        records: mergedRecords,
       }
     }
     case 'receita': {
       let query = supabase
         .from('transacoes_imersao_detalhado')
-        .select('nome, email, valor_pago, oferta, data_compra, funil, status')
+        .select(
+          'nome, email, valor_pago, oferta, data_compra, funil, status, link_guru, link_hubspot',
+        )
         .eq('is_vaga_fechada', true)
         .not('status', 'ilike', '%reembol%')
         .not('status', 'ilike', '%refund%')
@@ -121,6 +153,13 @@ export async function fetchDrillDownData(
           { key: 'oferta', label: 'Oferta' },
           { key: 'funil', label: 'Funil' },
           { key: 'data_compra', label: 'Data Compra', format: 'date' as const },
+          { key: 'link_guru', label: 'Guru', format: 'link' as const, linkLabel: 'Ver no Guru' },
+          {
+            key: 'link_hubspot',
+            label: 'HubSpot',
+            format: 'link' as const,
+            linkLabel: 'Ver no HubSpot',
+          },
         ],
         records: data || [],
       }
@@ -128,7 +167,7 @@ export async function fetchDrillDownData(
     case 'entradas-pendentes': {
       let query = supabase
         .from('entradas_sem_vaga_hubspot')
-        .select('nome, email, dt_entrada, dealstage_nome, funil')
+        .select('nome, email, dt_entrada, dealstage_nome, funil, link_hubspot')
 
       if (selectedFunnels.length > 0) {
         query = query.in('funil', selectedFunnels)
@@ -143,6 +182,12 @@ export async function fetchDrillDownData(
           { key: 'funil', label: 'Funil' },
           { key: 'dt_entrada', label: 'Data Entrada', format: 'date' as const },
           { key: 'dealstage_nome', label: 'Deal Stage' },
+          {
+            key: 'link_hubspot',
+            label: 'HubSpot',
+            format: 'link' as const,
+            linkLabel: 'Ver no HubSpot',
+          },
         ],
         records: data || [],
       }
@@ -150,7 +195,7 @@ export async function fetchDrillDownData(
     case 'reembolsos': {
       const { data } = await supabase
         .from('transacoes_imersao_detalhado')
-        .select('nome, email, valor_pago, status, data_compra')
+        .select('nome, email, valor_pago, status, data_compra, link_guru, link_hubspot')
         .ilike('status', '%reembol%')
         .order('data_compra', { ascending: false })
       return {
@@ -161,6 +206,13 @@ export async function fetchDrillDownData(
           { key: 'valor_pago', label: 'Valor Pago', format: 'currency' as const },
           { key: 'status', label: 'Status' },
           { key: 'data_compra', label: 'Data Compra', format: 'date' as const },
+          { key: 'link_guru', label: 'Guru', format: 'link' as const, linkLabel: 'Ver no Guru' },
+          {
+            key: 'link_hubspot',
+            label: 'HubSpot',
+            format: 'link' as const,
+            linkLabel: 'Ver no HubSpot',
+          },
         ],
         records: data || [],
       }
