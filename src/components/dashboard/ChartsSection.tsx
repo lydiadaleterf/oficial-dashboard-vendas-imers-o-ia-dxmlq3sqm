@@ -14,6 +14,11 @@ import {
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { GeoBarChart } from '@/components/dashboard/GeoBarChart'
+import {
+  DateRangeFilter,
+  type DateRange,
+  type QuickPeriod,
+} from '@/components/dashboard/DateRangeFilter'
 import { BarChart3 } from 'lucide-react'
 
 const TEAL_COLOR = '#14b8a6'
@@ -23,6 +28,10 @@ const SLATE_COLOR = '#94a3b8'
 interface ChartsSectionProps {
   data: ChartDataPoint[]
   geoData: GeoDataPoint[]
+  activePeriod: QuickPeriod
+  onPeriodChange: (period: QuickPeriod) => void
+  dateRange: DateRange
+  onDateRangeChange: (range: DateRange) => void
 }
 
 function EmptyChartState({ title, subtitle }: { title: string; subtitle?: string }) {
@@ -43,7 +52,14 @@ function EmptyChartState({ title, subtitle }: { title: string; subtitle?: string
   )
 }
 
-export function ChartsSection({ data, geoData }: ChartsSectionProps) {
+export function ChartsSection({
+  data,
+  geoData,
+  activePeriod,
+  onPeriodChange,
+  dateRange,
+  onDateRangeChange,
+}: ChartsSectionProps) {
   const useShortLabels = data.length > 40
 
   const allData = data.map((d) => ({
@@ -87,6 +103,12 @@ export function ChartsSection({ data, geoData }: ChartsSectionProps) {
   if (allData.length === 0) {
     return (
       <div className="flex flex-col gap-6 mb-6">
+        <DateRangeFilter
+          activePeriod={activePeriod}
+          onPeriodChange={onPeriodChange}
+          dateRange={dateRange}
+          onDateRangeChange={onDateRangeChange}
+        />
         <EmptyChartState title="Desempenho Diário — Entradas vs. Vagas Fechadas" />
         <EmptyChartState title="Receita Fechada por Dia" />
         <EmptyChartState
@@ -99,6 +121,12 @@ export function ChartsSection({ data, geoData }: ChartsSectionProps) {
 
   return (
     <div className="flex flex-col gap-6 mb-6">
+      <DateRangeFilter
+        activePeriod={activePeriod}
+        onPeriodChange={onPeriodChange}
+        dateRange={dateRange}
+        onDateRangeChange={onDateRangeChange}
+      />
       <Card className="shadow-subtle border-slate-200">
         <CardHeader className="pb-2">
           <CardTitle className="text-lg font-semibold text-slate-800">

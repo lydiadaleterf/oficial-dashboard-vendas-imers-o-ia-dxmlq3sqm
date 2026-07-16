@@ -4,11 +4,7 @@ import { subDays, format } from 'date-fns'
 import { useAuth } from '@/hooks/use-auth'
 import { useDashboardData } from '@/hooks/use-dashboard-data'
 import { FunnelFilter } from '@/components/dashboard/FunnelFilter'
-import {
-  DateRangeFilter,
-  type DateRange,
-  type QuickPeriod,
-} from '@/components/dashboard/DateRangeFilter'
+import { type DateRange, type QuickPeriod } from '@/components/dashboard/DateRangeFilter'
 import { KPICards } from '@/components/dashboard/KPICards'
 import { FunnelSection } from '@/components/dashboard/FunnelSection'
 import { ChartsSection } from '@/components/dashboard/ChartsSection'
@@ -113,12 +109,6 @@ export default function Index() {
 
       <FunnelFilter selected={selectedFunnels} onChange={setSelectedFunnels} />
 
-      <DateRangeFilter
-        activePeriod={activePeriod}
-        onDateRangeChange={setDateRange}
-        onPeriodChange={setActivePeriod}
-      />
-
       {data.isPartial && (
         <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-2 animate-fade-in">
           <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
@@ -132,7 +122,14 @@ export default function Index() {
 
       <FunnelSection funnels={data.funnels} />
 
-      <ChartsSection data={data.chartData} geoData={data.geoData} />
+      <ChartsSection
+        data={data.chartData}
+        geoData={data.geoData}
+        activePeriod={activePeriod}
+        onPeriodChange={setActivePeriod}
+        dateRange={dateRange}
+        onDateRangeChange={setDateRange}
+      />
 
       <TablesSection data={data} />
 
