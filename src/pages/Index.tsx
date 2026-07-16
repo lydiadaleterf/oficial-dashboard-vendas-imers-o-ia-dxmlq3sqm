@@ -4,7 +4,11 @@ import { subDays, format } from 'date-fns'
 import { useAuth } from '@/hooks/use-auth'
 import { useDashboardData } from '@/hooks/use-dashboard-data'
 import { FunnelFilter } from '@/components/dashboard/FunnelFilter'
-import { type DateRange, type QuickPeriod } from '@/components/dashboard/DateRangeFilter'
+import {
+  DateRangeFilter,
+  type DateRange,
+  type QuickPeriod,
+} from '@/components/dashboard/DateRangeFilter'
 import { KPICards } from '@/components/dashboard/KPICards'
 import { FunnelSection } from '@/components/dashboard/FunnelSection'
 import { ChartsSection } from '@/components/dashboard/ChartsSection'
@@ -18,7 +22,7 @@ import { cn } from '@/lib/utils'
 
 function getDefaultDateRange(): DateRange {
   const today = new Date()
-  const start = subDays(today, 30)
+  const start = subDays(today, 7)
   return { startDate: format(start, 'yyyy-MM-dd'), endDate: format(today, 'yyyy-MM-dd') }
 }
 
@@ -60,7 +64,7 @@ export default function Index() {
   const { user, loading: authLoading } = useAuth()
   const [selectedFunnels, setSelectedFunnels] = useState<string[]>([])
   const [dateRange, setDateRange] = useState<DateRange>(getDefaultDateRange)
-  const [activePeriod, setActivePeriod] = useState<QuickPeriod>('30d')
+  const [activePeriod, setActivePeriod] = useState<QuickPeriod>('7d')
   const { data, loading, refreshing, error, refresh } = useDashboardData(selectedFunnels, dateRange)
   const [drillDownType, setDrillDownType] = useState<DrillDownType | null>(null)
 
@@ -107,7 +111,15 @@ export default function Index() {
         </Button>
       </div>
 
-      <FunnelFilter selected={selectedFunnels} onChange={setSelectedFunnels} />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+        <FunnelFilter selected={selectedFunnels} onChange={setSelectedFunnels} />
+        <DateRangeFilter
+          activePeriod={activePeriod}
+          onPeriodChange={setActivePeriod}
+          dateRange={dateRange}
+          onDateRangeChange={setDateRange}
+        />
+      </div>
 
       {data.isPartial && (
         <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-2 animate-fade-in">
@@ -122,14 +134,7 @@ export default function Index() {
 
       <FunnelSection funnels={data.funnels} pagamentosIntegrais={data.pagamentosIntegrais} />
 
-      <ChartsSection
-        data={data.chartData}
-        geoData={data.geoData}
-        activePeriod={activePeriod}
-        onPeriodChange={setActivePeriod}
-        dateRange={dateRange}
-        onDateRangeChange={setDateRange}
-      />
+      <ChartsSection data={data.chartData} geoData={data.geoData} />
 
       <TablesSection data={data} />
 
