@@ -114,7 +114,6 @@ export default function Index() {
       <FunnelFilter selected={selectedFunnels} onChange={setSelectedFunnels} />
 
       <DateRangeFilter
-        dateRange={dateRange}
         activePeriod={activePeriod}
         onDateRangeChange={setDateRange}
         onPeriodChange={setActivePeriod}
