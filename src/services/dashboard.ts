@@ -13,6 +13,7 @@ export interface KPIData {
   receitaFechada: number
   entradasPendentes: number
   taxaAgendamento: number
+  refunded: number
 }
 
 export interface FunnelSellerInfo {

@@ -1,7 +1,14 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { KPIData } from '@/services/dashboard'
 import { DrillDownType } from '@/services/drill-down'
-import { TrendingUp, CheckCircle, DollarSign, AlertCircle, CalendarClock } from 'lucide-react'
+import {
+  TrendingUp,
+  CheckCircle,
+  DollarSign,
+  AlertCircle,
+  CalendarClock,
+  RotateCcw,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface KPICardsProps {
@@ -20,7 +27,7 @@ export function KPICards({ data, onCardClick }: KPICardsProps) {
   const isAgendamentoAlert = data.taxaAgendamento < 50
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
       <Card
         className="shadow-subtle hover:shadow-md transition-all border-t-4 border-t-indigo-500 cursor-pointer hover:border-t-indigo-600 animate-fade-in-up"
         onClick={() => onCardClick('entradas-pendentes')}
@@ -125,6 +132,25 @@ export function KPICards({ data, onCardClick }: KPICardsProps) {
             )}
           >
             {data.taxaAgendamento.toFixed(1)}%
+          </h2>
+        </CardContent>
+      </Card>
+
+      <Card
+        className="shadow-subtle hover:shadow-md transition-all border-t-4 border-t-rose-500 cursor-pointer hover:border-t-rose-600 animate-fade-in-up"
+        style={{ animationDelay: '250ms' }}
+        onClick={() => onCardClick('reembolsos')}
+      >
+        <CardContent className="p-4 flex flex-col justify-between h-full">
+          <div className="flex justify-between items-start mb-2">
+            <p className="text-sm font-medium text-slate-500">Reembolsos</p>
+            <div className="p-2 bg-rose-50 rounded-lg">
+              <RotateCcw className="w-4 h-4 text-rose-600" />
+            </div>
+          </div>
+          <h2 className="text-3xl font-bold tracking-tight text-slate-800">
+            {data.refunded}
+            <span className="text-base font-medium text-slate-400 ml-1">reembolsos</span>
           </h2>
         </CardContent>
       </Card>

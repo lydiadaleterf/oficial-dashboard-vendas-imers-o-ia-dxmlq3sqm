@@ -162,7 +162,8 @@ export function processDashboardData(
     aVista = 0,
     refundCount = 0,
     refundValor = 0,
-    kpiReceita = 0
+    kpiReceita = 0,
+    approvedCount = 0
   let pagamentosIntegraisCount = 0,
     pagamentosIntegraisValor = 0
   const fullPaymentByFunil = new Map<string, { count: number; valor: number }>()
@@ -172,6 +173,7 @@ export function processDashboardData(
   transacoes.forEach((row) => {
     const valor = safeNum(row.valor_pago)
     const status = (row.status || '').toLowerCase()
+    if (status === 'approved') approvedCount++
     if (isRefundStatus(status)) {
       refundCount++
       refundValor += valor
@@ -231,9 +233,8 @@ export function processDashboardData(
     return !closedEmails.has(email)
   })
 
-  const totalEntradas = funnels.reduce((s, f) => s + f.vendaEntrada, 0)
   const totalVagasFechadas = funnels.reduce((s, f) => s + f.vagasFechadas, 0)
-  const kpiEntradasPendentes = Math.max(0, totalEntradas - totalVagasFechadas)
+  const kpiEntradasPendentes = Math.max(0, approvedCount - totalVagasFechadas)
   const pmTotal = parcelado + aVista + vendaDireta
   const geoData: GeoDataPoint[] = Array.from(geoEmailMap.entries())
     .map(([estado, emails]) => ({ estado, count: emails.size }))
@@ -260,11 +261,12 @@ export function processDashboardData(
 
   return {
     kpis: {
-      entradas: totalEntradas,
+      entradas: approvedCount,
       vagasFechadas: totalVagasFechadas,
       receitaFechada: kpiReceita,
       entradasPendentes: kpiEntradasPendentes,
       taxaAgendamento,
+      refunded: refundCount,
     },
     funnels,
     chartData,
