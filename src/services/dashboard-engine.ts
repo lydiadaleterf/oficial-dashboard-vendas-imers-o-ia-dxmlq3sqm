@@ -221,6 +221,16 @@ export function processDashboardData(
     f.taxaAgendamento = f.vagasFechadas > 0 ? (scheduled / f.vagasFechadas) * 100 : 0
   })
 
+  const closedEmails = new Set<string>()
+  vagasFechadas.forEach((v) => {
+    const email = (v.email || '').toString().trim().toLowerCase()
+    if (email) closedEmails.add(email)
+  })
+  const entradasPendentesFiltered = entradasSemVaga.filter((e) => {
+    const email = (e.email || '').toString().trim().toLowerCase()
+    return !closedEmails.has(email)
+  })
+
   const kpiVagas = vagasFechadas.length
   const pmTotal = parcelado + aVista + vendaDireta
   const geoData: GeoDataPoint[] = Array.from(geoEmailMap.entries())
@@ -250,7 +260,7 @@ export function processDashboardData(
     kpis: {
       vagasFechadas: kpiVagas,
       receitaFechada: kpiReceita,
-      entradasPendentes: entradasSemVaga.length,
+      entradasPendentes: entradasPendentesFiltered.length,
       taxaAgendamento,
     },
     funnels,
@@ -261,7 +271,7 @@ export function processDashboardData(
     geoData,
     sellerRanking,
     sellerDailyData,
-    entradasSemVaga: entradasSemVaga as TableEntradasRow[],
+    entradasSemVaga: entradasPendentesFiltered as TableEntradasRow[],
     agendamentosPendentes,
     isPartial,
   }
