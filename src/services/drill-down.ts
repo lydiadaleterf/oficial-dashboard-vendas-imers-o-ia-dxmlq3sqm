@@ -100,33 +100,45 @@ export async function fetchDrillDownData(
       }
     }
     case 'receita': {
-      const { data } = await supabase
+      let query = supabase
         .from('transacoes_imersao_detalhado')
-        .select('nome, email, valor_pago, oferta, data_compra')
+        .select('nome, email, valor_pago, oferta, data_compra, funil')
         .eq('is_vaga_fechada', true)
-        .order('data_compra', { ascending: false })
+
+      if (selectedFunnels.length > 0) {
+        query = query.in('funil', selectedFunnels)
+      }
+
+      const { data } = await query.order('data_compra', { ascending: false })
       return {
-        title: 'Receita Total — Detalhamento',
+        title: 'Receita Total — Detalhamento' + funnelLabelSuffix,
         columns: [
           { key: 'nome', label: 'Nome' },
           { key: 'email', label: 'Email' },
           { key: 'valor_pago', label: 'Valor Pago', format: 'currency' as const },
           { key: 'oferta', label: 'Oferta' },
+          { key: 'funil', label: 'Funil' },
           { key: 'data_compra', label: 'Data Compra', format: 'date' as const },
         ],
         records: data || [],
       }
     }
     case 'entradas-pendentes': {
-      const { data } = await supabase
+      let query = supabase
         .from('entradas_sem_vaga_hubspot')
-        .select('nome, email, dt_entrada, dealstage_nome')
-        .order('dt_entrada', { ascending: false })
+        .select('nome, email, dt_entrada, dealstage_nome, funil')
+
+      if (selectedFunnels.length > 0) {
+        query = query.in('funil', selectedFunnels)
+      }
+
+      const { data } = await query.order('dt_entrada', { ascending: false })
       return {
-        title: 'Entradas Pendentes — Detalhamento',
+        title: 'Entradas Pendentes — Detalhamento' + funnelLabelSuffix,
         columns: [
           { key: 'nome', label: 'Nome' },
           { key: 'email', label: 'Email' },
+          { key: 'funil', label: 'Funil' },
           { key: 'dt_entrada', label: 'Data Entrada', format: 'date' as const },
           { key: 'dealstage_nome', label: 'Deal Stage' },
         ],
