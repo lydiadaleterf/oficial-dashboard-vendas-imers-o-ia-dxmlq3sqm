@@ -161,6 +161,7 @@ export const fetchDashboardData = async (
 
   const diarioMap = new Map<string, ChartDataPoint>()
   diarioRes.data?.forEach((row) => {
+    if (!row.dia) return
     if (!diarioMap.has(row.dia)) {
       diarioMap.set(row.dia, {
         dia: row.dia,

@@ -14,6 +14,7 @@ import {
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { GeoBarChart } from '@/components/dashboard/GeoBarChart'
+import { BarChart3 } from 'lucide-react'
 
 const TEAL_COLOR = '#14b8a6'
 const TEAL_DARK = '#0d9488'
@@ -24,6 +25,24 @@ interface ChartsSectionProps {
   geoData: GeoDataPoint[]
 }
 
+function EmptyChartState({ title, subtitle }: { title: string; subtitle?: string }) {
+  return (
+    <Card className="shadow-subtle border-slate-200">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg font-semibold text-slate-800">{title}</CardTitle>
+        {subtitle && <p className="text-xs text-slate-500 mt-1">{subtitle}</p>}
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-col items-center justify-center h-[340px] text-slate-400">
+          <BarChart3 className="w-10 h-10 mb-3 opacity-40" />
+          <p className="text-sm font-medium">Sem dados disponíveis</p>
+          <p className="text-xs mt-1">Não há registros para o período selecionado.</p>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
 export function ChartsSection({ data, geoData }: ChartsSectionProps) {
   const allData = data.map((d) => ({
     ...d,
@@ -31,11 +50,10 @@ export function ChartsSection({ data, geoData }: ChartsSectionProps) {
   }))
 
   const chartWidth = Math.max(allData.length * 55, 800)
+  const xAxisInterval = allData.length > 30 ? Math.floor(allData.length / 15) : 0
 
   const formatCurrencyAxis = (value: number) => {
-    if (value >= 1000) {
-      return `R$ ${(value / 1000).toFixed(0)}k`
-    }
+    if (value >= 1000) return `R$ ${(value / 1000).toFixed(0)}k`
     return `R$ ${value}`
   }
 
@@ -63,6 +81,19 @@ export function ChartsSection({ data, geoData }: ChartsSectionProps) {
     boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
   }
 
+  if (allData.length === 0) {
+    return (
+      <div className="flex flex-col gap-6 mb-6">
+        <EmptyChartState title="Desempenho Diário — Entradas vs. Vagas Fechadas" />
+        <EmptyChartState title="Receita Fechada por Dia" />
+        <EmptyChartState
+          title="Distribuição Geográfica"
+          subtitle="Vagas fechadas por estado (ranking)"
+        />
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col gap-6 mb-6">
       <Card className="shadow-subtle border-slate-200">
@@ -85,7 +116,7 @@ export function ChartsSection({ data, geoData }: ChartsSectionProps) {
                     angle={-45}
                     textAnchor="end"
                     height={70}
-                    interval={0}
+                    interval={xAxisInterval}
                   />
                   <YAxis
                     axisLine={false}
@@ -156,7 +187,7 @@ export function ChartsSection({ data, geoData }: ChartsSectionProps) {
                     angle={-45}
                     textAnchor="end"
                     height={70}
-                    interval={0}
+                    interval={xAxisInterval}
                   />
                   <YAxis
                     axisLine={false}
@@ -200,9 +231,19 @@ export function ChartsSection({ data, geoData }: ChartsSectionProps) {
           <p className="text-xs text-slate-500 mt-1">Vagas fechadas por estado (ranking)</p>
         </CardHeader>
         <CardContent>
-          <div className="w-full mt-4">
-            <GeoBarChart geoData={geoData} />
-          </div>
+          {geoData.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-[200px] text-slate-400">
+              <BarChart3 className="w-10 h-10 mb-3 opacity-40" />
+              <p className="text-sm font-medium">Sem dados disponíveis</p>
+              <p className="text-xs mt-1">
+                Não há registros geográficos para o período selecionado.
+              </p>
+            </div>
+          ) : (
+            <div className="w-full mt-4">
+              <GeoBarChart geoData={geoData} />
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
