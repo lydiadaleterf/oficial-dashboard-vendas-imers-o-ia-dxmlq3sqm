@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { FunnelData, PagamentosIntegraisData } from '@/services/dashboard'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { ArrowDown, Banknote } from 'lucide-react'
+import { ArrowDown, Banknote, CalendarCheck } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getFunnelLabel } from '@/lib/funnel-labels'
 
@@ -66,6 +66,24 @@ function ConversionArrow({ pct }: { pct: number }) {
         {pct}% Conversão
       </div>
       <ArrowDown className="w-4 h-4 -mt-2 text-slate-300" />
+    </div>
+  )
+}
+
+function SchedulingConversion({ pct }: { pct: number }) {
+  const display = pct > 0 ? `${pct.toFixed(1)}%` : '0.0%'
+  return (
+    <div
+      className="mt-2 w-full flex items-center justify-center animate-fade-in-up"
+      style={{ animationDelay: '150ms' }}
+    >
+      <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-2 flex items-center gap-2 shadow-sm">
+        <CalendarCheck className="w-4 h-4 text-indigo-500" />
+        <span className="text-xs font-medium text-indigo-700 uppercase tracking-wider">
+          Conversão de Agendamento
+        </span>
+        <span className="text-lg font-bold text-indigo-600">{display}</span>
+      </div>
     </div>
   )
 }
@@ -208,6 +226,8 @@ export function FunnelSection({ funnels, pagamentosIntegrais }: FunnelSectionPro
                     />
                   </div>
                 ))}
+
+                <SchedulingConversion pct={funnel.taxaAgendamento} />
 
                 <div className="flex justify-center gap-3 mt-3 pt-3 border-t border-slate-100 w-full">
                   <div className="flex flex-col items-center">

@@ -24,6 +24,7 @@ export interface FunnelData {
   vendedorQtd: number
   vendedorPct: number
   sellers: FunnelSellerInfo[]
+  taxaAgendamento: number
 }
 
 export interface ChartDataPoint {
@@ -139,7 +140,7 @@ export const fetchDashboardData = async (
       applyFilters(
         supabase
           .from('vagas_fechadas_agendamento')
-          .select('status_agendamento, nome, email')
+          .select('status_agendamento, nome, email, funil')
           .order('data_agendamento', { ascending: false }),
         'data_agendamento',
       ),
@@ -239,6 +240,7 @@ export const fetchDashboardData = async (
         vendedorQtd: 0,
         vendedorPct: 0,
         sellers: [],
+        taxaAgendamento: 0,
       })
     }
     const fd = funnelMap.get(name)!
@@ -311,6 +313,26 @@ export const fetchDashboardData = async (
         f.vagasFechadas = Math.max(0, f.vagasFechadas - v.count)
       }
     })
+  })
+
+  const scheduledByFunil = new Map<string, number>()
+  agData.forEach((a) => {
+    const funilName = a.funil || 'Unknown'
+    const s = (a.status_agendamento || '').toLowerCase()
+    if (SCHEDULED_STATUSES.includes(s)) {
+      scheduledByFunil.set(funilName, (scheduledByFunil.get(funilName) || 0) + 1)
+    }
+  })
+
+  funnels.forEach((f) => {
+    const fNorm = normalizeFunil(f.nome)
+    let scheduled = 0
+    scheduledByFunil.forEach((count, k) => {
+      if (normalizeFunil(k) === fNorm) {
+        scheduled += count
+      }
+    })
+    f.taxaAgendamento = f.vagasFechadas > 0 ? (scheduled / f.vagasFechadas) * 100 : 0
   })
 
   const pmTotal = parcelado + aVista + vendaDireta
