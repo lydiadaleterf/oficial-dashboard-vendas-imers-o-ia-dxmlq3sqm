@@ -46,11 +46,13 @@ function EmptyChartState({ title, subtitle }: { title: string; subtitle?: string
 export function ChartsSection({ data, geoData }: ChartsSectionProps) {
   const allData = data.map((d) => ({
     ...d,
-    diaFormatted: d.dia ? format(parseISO(d.dia), 'dd/MM', { locale: ptBR }) : '',
+    diaFormatted: d.dia
+      ? format(parseISO(d.dia), useShortLabels ? 'dd' : 'dd/MM', { locale: ptBR })
+      : '',
   }))
 
-  const chartWidth = Math.max(allData.length * 55, 800)
-  const xAxisInterval = allData.length > 30 ? Math.floor(allData.length / 15) : 0
+  const xAxisInterval = allData.length > 20 ? Math.floor(allData.length / 12) : 0
+  const useShortLabels = allData.length > 40
 
   const formatCurrencyAxis = (value: number) => {
     if (value >= 1000) return `R$ ${(value / 1000).toFixed(0)}k`
@@ -103,66 +105,65 @@ export function ChartsSection({ data, geoData }: ChartsSectionProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto mt-4 pb-2">
-            <div style={{ width: chartWidth, height: 360 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={allData} margin={{ top: 20, right: 10, left: 0, bottom: 60 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                  <XAxis
-                    dataKey="diaFormatted"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: '#64748b', fontSize: 11 }}
-                    angle={-45}
-                    textAnchor="end"
-                    height={70}
-                    interval={xAxisInterval}
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: '#64748b', fontSize: 12 }}
-                    allowDecimals={false}
-                  />
-                  <RechartsTooltip
-                    cursor={{ fill: '#f1f5f9' }}
-                    contentStyle={tooltipStyle}
-                    labelStyle={{ fontWeight: 'bold', color: '#334155', marginBottom: '4px' }}
-                  />
-                  <Legend wrapperStyle={{ paddingTop: '10px' }} iconType="circle" />
-                  <Bar
+          <div className="mt-4 pb-2 w-full" style={{ height: 360 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={allData} margin={{ top: 20, right: 10, left: 0, bottom: 60 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                <XAxis
+                  dataKey="diaFormatted"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#64748b', fontSize: 11 }}
+                  angle={-45}
+                  textAnchor="end"
+                  height={70}
+                  interval={xAxisInterval}
+                  minTickGap={5}
+                />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#64748b', fontSize: 12 }}
+                  allowDecimals={false}
+                />
+                <RechartsTooltip
+                  cursor={{ fill: '#f1f5f9' }}
+                  contentStyle={tooltipStyle}
+                  labelStyle={{ fontWeight: 'bold', color: '#334155', marginBottom: '4px' }}
+                />
+                <Legend wrapperStyle={{ paddingTop: '10px' }} iconType="circle" />
+                <Bar
+                  dataKey="entradas_realizadas"
+                  name="Entradas"
+                  fill={SLATE_COLOR}
+                  radius={[4, 4, 0, 0]}
+                  maxBarSize={40}
+                >
+                  <LabelList
                     dataKey="entradas_realizadas"
-                    name="Entradas"
-                    fill={SLATE_COLOR}
-                    radius={[4, 4, 0, 0]}
-                    maxBarSize={40}
-                  >
-                    <LabelList
-                      dataKey="entradas_realizadas"
-                      position="top"
-                      fill="#64748b"
-                      fontSize={10}
-                      formatter={(value: number) => (value > 0 ? String(value) : '')}
-                    />
-                  </Bar>
-                  <Bar
+                    position="top"
+                    fill="#64748b"
+                    fontSize={10}
+                    formatter={(value: number) => (value > 0 ? String(value) : '')}
+                  />
+                </Bar>
+                <Bar
+                  dataKey="vagas_fechadas"
+                  name="Vagas Fechadas"
+                  fill={TEAL_COLOR}
+                  radius={[4, 4, 0, 0]}
+                  maxBarSize={40}
+                >
+                  <LabelList
                     dataKey="vagas_fechadas"
-                    name="Vagas Fechadas"
-                    fill={TEAL_COLOR}
-                    radius={[4, 4, 0, 0]}
-                    maxBarSize={40}
-                  >
-                    <LabelList
-                      dataKey="vagas_fechadas"
-                      position="top"
-                      fill={TEAL_DARK}
-                      fontSize={10}
-                      formatter={(value: number) => (value > 0 ? String(value) : '')}
-                    />
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+                    position="top"
+                    fill={TEAL_DARK}
+                    fontSize={10}
+                    formatter={(value: number) => (value > 0 ? String(value) : '')}
+                  />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </CardContent>
       </Card>
@@ -174,51 +175,50 @@ export function ChartsSection({ data, geoData }: ChartsSectionProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto mt-4 pb-2">
-            <div style={{ width: chartWidth, height: 340 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={allData} margin={{ top: 20, right: 10, left: 0, bottom: 60 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                  <XAxis
-                    dataKey="diaFormatted"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: '#64748b', fontSize: 11 }}
-                    angle={-45}
-                    textAnchor="end"
-                    height={70}
-                    interval={xAxisInterval}
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: '#64748b', fontSize: 12 }}
-                    tickFormatter={formatCurrencyAxis}
-                  />
-                  <RechartsTooltip
-                    cursor={{ fill: '#f1f5f9' }}
-                    contentStyle={tooltipStyle}
-                    labelStyle={{ fontWeight: 'bold', color: '#334155', marginBottom: '4px' }}
-                    formatter={(value: number) => [formatCurrencyValue(value), 'Receita']}
-                  />
-                  <Bar
+          <div className="mt-4 pb-2 w-full" style={{ height: 340 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={allData} margin={{ top: 20, right: 10, left: 0, bottom: 60 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                <XAxis
+                  dataKey="diaFormatted"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#64748b', fontSize: 11 }}
+                  angle={-45}
+                  textAnchor="end"
+                  height={70}
+                  interval={xAxisInterval}
+                  minTickGap={5}
+                />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#64748b', fontSize: 12 }}
+                  tickFormatter={formatCurrencyAxis}
+                />
+                <RechartsTooltip
+                  cursor={{ fill: '#f1f5f9' }}
+                  contentStyle={tooltipStyle}
+                  labelStyle={{ fontWeight: 'bold', color: '#334155', marginBottom: '4px' }}
+                  formatter={(value: number) => [formatCurrencyValue(value), 'Receita']}
+                />
+                <Bar
+                  dataKey="receita_fechada"
+                  name="Receita Fechada"
+                  fill={TEAL_COLOR}
+                  radius={[4, 4, 0, 0]}
+                  maxBarSize={40}
+                >
+                  <LabelList
                     dataKey="receita_fechada"
-                    name="Receita Fechada"
-                    fill={TEAL_COLOR}
-                    radius={[4, 4, 0, 0]}
-                    maxBarSize={40}
-                  >
-                    <LabelList
-                      dataKey="receita_fechada"
-                      position="top"
-                      fill={TEAL_DARK}
-                      fontSize={10}
-                      formatter={(value: number) => (value > 0 ? formatCurrencyLabel(value) : '')}
-                    />
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+                    position="top"
+                    fill={TEAL_DARK}
+                    fontSize={10}
+                    formatter={(value: number) => (value > 0 ? formatCurrencyLabel(value) : '')}
+                  />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </CardContent>
       </Card>
