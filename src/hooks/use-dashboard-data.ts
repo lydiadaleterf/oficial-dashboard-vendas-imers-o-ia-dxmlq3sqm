@@ -1,13 +1,17 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { DashboardData, FunnelSelection, fetchDashboardData } from '@/services/dashboard'
 
-export const useDashboardData = (selectedFunnels: FunnelSelection = []) => {
+export const useDashboardData = (
+  selectedFunnels: FunnelSelection = [],
+  dateRange?: { startDate: string; endDate: string },
+) => {
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState<boolean>(true)
   const [refreshing, setRefreshing] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
   const requestIdRef = useRef(0)
   const funnelsKey = JSON.stringify(selectedFunnels)
+  const dateKey = JSON.stringify(dateRange)
 
   const loadData = useCallback(
     async (isRefresh = false) => {
@@ -22,7 +26,7 @@ export const useDashboardData = (selectedFunnels: FunnelSelection = []) => {
       setError(null)
 
       try {
-        const result = await fetchDashboardData(selectedFunnels)
+        const result = await fetchDashboardData(selectedFunnels, dateRange)
         if (requestId !== requestIdRef.current) return
         setData(result)
       } catch (err) {
@@ -36,7 +40,7 @@ export const useDashboardData = (selectedFunnels: FunnelSelection = []) => {
         }
       }
     },
-    [funnelsKey],
+    [funnelsKey, dateKey],
   )
 
   useEffect(() => {

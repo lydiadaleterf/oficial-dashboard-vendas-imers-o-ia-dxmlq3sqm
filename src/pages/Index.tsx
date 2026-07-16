@@ -1,8 +1,14 @@
 import { useState } from 'react'
 import { Navigate } from 'react-router-dom'
+import { subDays, format } from 'date-fns'
 import { useAuth } from '@/hooks/use-auth'
 import { useDashboardData } from '@/hooks/use-dashboard-data'
 import { FunnelFilter } from '@/components/dashboard/FunnelFilter'
+import {
+  DateRangeFilter,
+  type DateRange,
+  type QuickPeriod,
+} from '@/components/dashboard/DateRangeFilter'
 import { KPICards } from '@/components/dashboard/KPICards'
 import { FunnelSection } from '@/components/dashboard/FunnelSection'
 import { ChartsSection } from '@/components/dashboard/ChartsSection'
@@ -13,6 +19,12 @@ import { RefreshCw, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
+
+function getDefaultDateRange(): DateRange {
+  const today = new Date()
+  const start = subDays(today, 30)
+  return { startDate: format(start, 'yyyy-MM-dd'), endDate: format(today, 'yyyy-MM-dd') }
+}
 
 function LoadingSkeleton() {
   return (
@@ -51,7 +63,9 @@ function ErrorState({ error, onRetry }: { error: string | null; onRetry: () => v
 export default function Index() {
   const { user, loading: authLoading } = useAuth()
   const [selectedFunnels, setSelectedFunnels] = useState<string[]>([])
-  const { data, loading, refreshing, error, refresh } = useDashboardData(selectedFunnels)
+  const [dateRange, setDateRange] = useState<DateRange>(getDefaultDateRange)
+  const [activePeriod, setActivePeriod] = useState<QuickPeriod>('30d')
+  const { data, loading, refreshing, error, refresh } = useDashboardData(selectedFunnels, dateRange)
   const [drillDownType, setDrillDownType] = useState<DrillDownType | null>(null)
 
   if (authLoading) {
@@ -98,6 +112,13 @@ export default function Index() {
       </div>
 
       <FunnelFilter selected={selectedFunnels} onChange={setSelectedFunnels} />
+
+      <DateRangeFilter
+        dateRange={dateRange}
+        activePeriod={activePeriod}
+        onDateRangeChange={setDateRange}
+        onPeriodChange={setActivePeriod}
+      />
 
       {data.isPartial && (
         <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-2 animate-fade-in">

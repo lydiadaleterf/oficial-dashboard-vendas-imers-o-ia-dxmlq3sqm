@@ -99,10 +99,19 @@ const safeNum = (val: unknown): number => {
 
 export const fetchDashboardData = async (
   selectedFunnels: FunnelSelection = [],
+  dateRange?: { startDate: string; endDate: string },
 ): Promise<DashboardData> => {
   let isPartial = false
   const ff = selectedFunnels.length > 0 ? selectedFunnels : undefined
   const applyFF = (q: any) => (ff ? q.in('funil', ff) : q)
+  const applyFilters = (q: any, dateColumn?: string) => {
+    let query = applyFF(q)
+    if (dateColumn && dateRange) {
+      if (dateRange.startDate) query = query.gte(dateColumn, dateRange.startDate)
+      if (dateRange.endDate) query = query.lte(dateColumn, dateRange.endDate + 'T23:59:59')
+    }
+    return query
+  }
 
   console.debug(
     '[Dashboard] selectedFunnels (technical/unaccented values):',
@@ -111,32 +120,37 @@ export const fetchDashboardData = async (
 
   const [diarioRes, agendamentoRes, funilRes, entradasRes, vendasRes, transacoesRes] =
     await Promise.all([
-      applyFF(
+      applyFilters(
         supabase.from('dashboard_diario_imersao').select('*').order('dia', { ascending: true }),
+        'dia',
       ),
-      applyFF(
+      applyFilters(
         supabase
           .from('vagas_fechadas_agendamento')
           .select('status_agendamento, nome, email')
           .order('data_agendamento', { ascending: false }),
+        'data_agendamento',
       ),
-      applyFF(supabase.from('funil_skip_vs_lancamento_interno').select('*')),
-      applyFF(
+      applyFilters(supabase.from('funil_skip_vs_lancamento_interno').select('*')),
+      applyFilters(
         supabase
           .from('entradas_sem_vaga_hubspot')
           .select('nome, email, dt_entrada, link_hubspot, dealstage_nome')
           .order('dt_entrada', { ascending: false }),
+        'dt_entrada',
       ),
-      applyFF(
+      applyFilters(
         supabase
           .from('vendas_vendedor_diario_imersao')
           .select('dia, vendedor, vendas')
           .order('dia', { ascending: false }),
+        'dia',
       ),
-      applyFF(
+      applyFilters(
         supabase
           .from('transacoes_imersao_detalhado')
           .select('valor_pago, oferta, status, estado, is_vaga_fechada, email'),
+        'data_compra',
       ),
     ])
 
@@ -229,7 +243,9 @@ export const fetchDashboardData = async (
     }
   })
   const funnels = Array.from(funnelMap.values())
-  const kpiVagas = funnels.reduce((sum, f) => sum + f.vagasFechadas, 0)
+  const kpiVagas = dateRange
+    ? chartData.reduce((sum, d) => sum + d.vagas_fechadas, 0)
+    : funnels.reduce((sum, f) => sum + f.vagasFechadas, 0)
   console.debug(
     '[Dashboard] KPI vagasFechadas from funil_skip_vs_lancamento_interno:',
     kpiVagas,
