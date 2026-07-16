@@ -29,23 +29,6 @@ export function KPICards({ data, onCardClick }: KPICardsProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
       <Card
-        className="shadow-subtle hover:shadow-md transition-all border-t-4 border-t-indigo-500 cursor-pointer hover:border-t-indigo-600 animate-fade-in-up"
-        onClick={() => onCardClick('entradas-pendentes')}
-      >
-        <CardContent className="p-4 flex flex-col justify-between h-full">
-          <div className="flex justify-between items-start mb-2">
-            <p className="text-sm font-medium text-slate-500">Entradas</p>
-            <div className="p-2 bg-indigo-50 rounded-lg">
-              <TrendingUp className="w-4 h-4 text-indigo-600" />
-            </div>
-          </div>
-          <h2 className="text-3xl font-bold tracking-tight text-slate-800">
-            {data.entradas.toLocaleString('pt-BR')}
-          </h2>
-        </CardContent>
-      </Card>
-
-      <Card
         className="shadow-subtle hover:shadow-md transition-all border-t-4 border-t-teal-500 cursor-pointer hover:border-t-teal-600 animate-fade-in-up"
         style={{ animationDelay: '50ms' }}
         onClick={() => onCardClick('vagas-fechadas')}

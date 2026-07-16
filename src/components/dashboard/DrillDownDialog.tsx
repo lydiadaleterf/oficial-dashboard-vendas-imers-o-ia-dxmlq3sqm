@@ -80,67 +80,6 @@ export function DrillDownDialog({
       onOpenChange={(v) => {
         if (!v) onClose()
       }}
-    >
-      <DialogContent className="max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="gap-1 text-slate-600 hover:text-slate-900"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Voltar
-            </Button>
-            <span className="ml-2">{title}</span>
-          </DialogTitle>
-        </DialogHeader>
-        <div className="overflow-auto flex-1 border-t">
-          {loading ? (
-            <div className="space-y-2 p-4">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <Skeleton key={i} className="h-10 w-full" />
-              ))}
-            </div>
-          ) : safeRecords.length === 0 ? (
-            <p className="text-center py-10 text-slate-500">Nenhum registro encontrado.</p>
-          ) : (
-            <Table>
-              <TableHeader className="bg-slate-50 sticky top-0 z-10">
-                <TableRow>
-                  {safeColumns.map((col) => (
-                    <TableHead key={col.key}>{col.label}</TableHead>
-                  ))}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {safeRecords.map((record, i) => (
-                  <TableRow key={i} className="hover:bg-slate-50">
-                    {safeColumns.map((col) => (
-                      <TableCell key={col.key} className="text-sm text-slate-700">
-                        {col.format === 'link' && record?.[col.key] ? (
-                          <a
-                            href={record[col.key]}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:underline"
-                          >
-                            {col.linkLabel || 'Abrir link'}
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                        ) : (
-                          formatCellValue(record?.[col.key], col.format)
-                        )}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+    ></Dialog>
   )
 }
