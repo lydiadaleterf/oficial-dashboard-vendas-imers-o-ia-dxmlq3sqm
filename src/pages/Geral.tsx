@@ -3,11 +3,8 @@ import { useDashboardData } from '@/hooks/use-dashboard-data'
 import { useNektData } from '@/hooks/use-nekt-data'
 import { NEKT_QUERIES } from '@/services/nekt'
 import type { DateRange } from '@/services/dashboard'
-import {
-  filterVagasFechadas,
-  VAGAS_FECHADAS_COLUMNS,
-  type DrillDownType,
-} from '@/services/drill-down'
+import { type DrillDownType } from '@/services/drill-down'
+import { filterVagasFechadas, VAGAS_FECHADAS_COLUMNS } from '@/lib/vagas-fechadas'
 import { ScorecardCards, type ScorecardItem } from '@/components/dashboard/ScorecardCards'
 import { FunnelFilter } from '@/components/dashboard/FunnelFilter'
 import { DateRangeFilter, type QuickPeriod } from '@/components/dashboard/DateRangeFilter'
