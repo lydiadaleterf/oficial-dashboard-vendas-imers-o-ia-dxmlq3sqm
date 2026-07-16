@@ -29,6 +29,7 @@ export interface AdaptaNativeData {
   leadsByUtmSource: LeadDistributionItem[]
   leadsByDealStage: LeadDistributionItem[]
   dailySales: AdaptaDailySales[]
+  rawLeads: AdaptaLead[]
 }
 
 function aggregateLeads(leads: AdaptaLead[], field: keyof AdaptaLead): LeadDistributionItem[] {
@@ -61,5 +62,6 @@ export async function fetchAdaptaNativeData(): Promise<AdaptaNativeData> {
     leadsByUtmSource: aggregateLeads(leads, 'utm_source'),
     leadsByDealStage: aggregateLeads(leads, 'dealstage'),
     dailySales,
+    rawLeads: leads,
   }
 }

@@ -48,7 +48,6 @@ export async function fetchDrillDownData(type: DrillDownType): Promise<DrillDown
         .from('vagas_fechadas_agendamento')
         .select('nome, email, data_vaga_fechada, status_agendamento')
         .order('data_vaga_fechada', { ascending: false })
-        .limit(200)
       return {
         title: 'Vagas Fechadas — Detalhamento',
         columns: [
@@ -66,7 +65,6 @@ export async function fetchDrillDownData(type: DrillDownType): Promise<DrillDown
         .select('nome, email, valor_pago, oferta, data_compra')
         .eq('is_vaga_fechada', true)
         .order('data_compra', { ascending: false })
-        .limit(200)
       return {
         title: 'Receita Total — Detalhamento',
         columns: [
@@ -84,7 +82,6 @@ export async function fetchDrillDownData(type: DrillDownType): Promise<DrillDown
         .from('entradas_sem_vaga_hubspot')
         .select('nome, email, dt_entrada, dealstage_nome')
         .order('dt_entrada', { ascending: false })
-        .limit(200)
       return {
         title: 'Entradas Pendentes — Detalhamento',
         columns: [
@@ -102,7 +99,6 @@ export async function fetchDrillDownData(type: DrillDownType): Promise<DrillDown
         .select('nome, email, valor_pago, status, data_compra')
         .ilike('status', '%reembol%')
         .order('data_compra', { ascending: false })
-        .limit(200)
       return {
         title: 'Reembolsos — Detalhamento',
         columns: [

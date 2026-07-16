@@ -1,22 +1,139 @@
+import { Navigate } from 'react-router-dom'
+import { useAuth } from '@/hooks/use-auth'
+import { useAdaptaNativeData } from '@/hooks/use-adapta-native-data'
+import { useNektData } from '@/hooks/use-nekt-data'
+import { NEKT_QUERIES } from '@/services/nekt'
+import { ScorecardCards } from '@/components/dashboard/ScorecardCards'
+import { NativeLeadsTable } from '@/components/dashboard/NativeLeadsTable'
+import { NativeDistribution } from '@/components/dashboard/NativeDistribution'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Construction } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
+import { AlertTriangle, Users, Trophy, TrendingUp } from 'lucide-react'
+import { formatCurrency, formatNumber, safeNumber } from '@/lib/format'
 
 export default function AdaptaNative() {
+  const { user, loading: authLoading } = useAuth()
+  const { data, loading, error } = useAdaptaNativeData()
+  const { data: scorecardData, error: scorecardError } = useNektData(NEKT_QUERIES.SCORECARD)
+
+  if (authLoading) return null
+  if (!user) return <Navigate to="/login" replace />
+
+  const ganhoCount =
+    data?.leadsByDealStage.find((s) => s.label.toLowerCase() === 'ganho')?.count ?? 0
+  const conversionRate = data && data.totalLeads > 0 ? (ganhoCount / data.totalLeads) * 100 : 0
+  const totalReceita =
+    data?.dailySales.reduce((sum, s) => sum + (safeNumber(s.receita) ?? 0), 0) ?? 0
+
   return (
-    <div className="flex items-center justify-center min-h-[60vh] animate-fade-in">
-      <Card className="max-w-md w-full shadow-subtle border-slate-200 bg-card">
-        <CardHeader className="text-center pb-2">
-          <div className="flex justify-center mb-3">
-            <div className="p-3 bg-amber-50 rounded-full">
-              <Construction className="w-8 h-8 text-amber-500" />
-            </div>
+    <div className="space-y-6 p-4 md:p-6 max-w-7xl mx-auto">
+      <div>
+        <h1 className="text-xl md:text-2xl font-bold text-slate-800">Adapta Labs Native</h1>
+        <p className="text-sm text-slate-500 mt-0.5">Tracking de vendas e gestão de leads</p>
+      </div>
+
+      {scorecardError && (
+        <Card className="border-amber-200 bg-amber-50/50">
+          <CardContent className="p-3 flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+            <span className="text-xs text-amber-700">
+              Scorecard Nekt indisponível: {scorecardError}
+            </span>
+          </CardContent>
+        </Card>
+      )}
+
+      {scorecardData.length > 0 && <ScorecardCards data={scorecardData} />}
+
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-28 rounded-xl" />
+          ))}
+        </div>
+      ) : error ? (
+        <Card className="border-red-200 bg-red-50/50">
+          <CardContent className="p-4 flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-red-500" />
+            <span className="text-sm text-red-700">{error}</span>
+          </CardContent>
+        </Card>
+      ) : data ? (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card className="shadow-subtle border-slate-200 animate-fade-in-up">
+              <CardContent className="p-4">
+                <div className="flex justify-between items-start mb-2">
+                  <p className="text-sm font-medium text-slate-500">Total de Leads</p>
+                  <div className="p-2 bg-slate-100 rounded-lg">
+                    <Users className="w-4 h-4 text-slate-600" />
+                  </div>
+                </div>
+                <p className="text-3xl font-bold text-slate-800">{formatNumber(data.totalLeads)}</p>
+              </CardContent>
+            </Card>
+            <Card
+              className="shadow-subtle border-slate-200 animate-fade-in-up"
+              style={{ animationDelay: '50ms' }}
+            >
+              <CardContent className="p-4">
+                <div className="flex justify-between items-start mb-2">
+                  <p className="text-sm font-medium text-slate-500">Conversão (Ganho)</p>
+                  <div className="p-2 bg-teal-50 rounded-lg">
+                    <TrendingUp className="w-4 h-4 text-teal-600" />
+                  </div>
+                </div>
+                <p className="text-3xl font-bold text-slate-800">{conversionRate.toFixed(1)}%</p>
+              </CardContent>
+            </Card>
+            <Card
+              className="shadow-subtle border-slate-200 animate-fade-in-up"
+              style={{ animationDelay: '100ms' }}
+            >
+              <CardContent className="p-4">
+                <div className="flex justify-between items-start mb-2">
+                  <p className="text-sm font-medium text-slate-500">Vendas Ganhas</p>
+                  <div className="p-2 bg-amber-50 rounded-lg">
+                    <Trophy className="w-4 h-4 text-amber-600" />
+                  </div>
+                </div>
+                <p className="text-3xl font-bold text-slate-800">{formatNumber(ganhoCount)}</p>
+              </CardContent>
+            </Card>
+            <Card
+              className="shadow-subtle border-slate-200 animate-fade-in-up"
+              style={{ animationDelay: '150ms' }}
+            >
+              <CardContent className="p-4">
+                <div className="flex justify-between items-start mb-2">
+                  <p className="text-sm font-medium text-slate-500">Receita Total</p>
+                  <div className="p-2 bg-emerald-50 rounded-lg">
+                    <TrendingUp className="w-4 h-4 text-emerald-600" />
+                  </div>
+                </div>
+                <p className="text-3xl font-bold text-slate-800">{formatCurrency(totalReceita)}</p>
+              </CardContent>
+            </Card>
           </div>
-          <CardTitle className="text-xl font-bold text-slate-800">Em Construção</CardTitle>
-        </CardHeader>
-        <CardContent className="text-center">
-          <p className="text-sm text-slate-500">Esta página está sendo preparada!</p>
-        </CardContent>
-      </Card>
+
+          <NativeDistribution
+            byStage={data.leadsByDealStage}
+            bySource={data.leadsByOrigemPrimaria}
+            totalLeads={data.totalLeads}
+          />
+
+          <Card className="shadow-subtle border-slate-200">
+            <CardHeader className="pb-2 border-b bg-slate-50/50">
+              <CardTitle className="text-base font-semibold text-slate-800">
+                Lista Completa de Leads ({data.totalLeads} registros)
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <NativeLeadsTable leads={data.rawLeads} />
+            </CardContent>
+          </Card>
+        </>
+      ) : null}
     </div>
   )
 }

@@ -39,7 +39,7 @@ export function TablesSection({ data }: TablesSectionProps) {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0 flex-1 overflow-hidden">
-          <div className="max-h-[400px] overflow-auto">
+          <div className="max-h-[600px] overflow-auto">
             <Table>
               <TableHeader className="bg-slate-50 sticky top-0 z-10 shadow-sm">
                 <TableRow>
@@ -108,7 +108,7 @@ export function TablesSection({ data }: TablesSectionProps) {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0 flex-1 overflow-hidden">
-            <div className="max-h-[180px] overflow-auto bg-amber-50/20">
+            <div className="max-h-[300px] overflow-auto bg-amber-50/20">
               <Table>
                 <TableBody>
                   {data.agendamentosPendentes.length > 0 ? (
@@ -143,7 +143,7 @@ export function TablesSection({ data }: TablesSectionProps) {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0 flex-1 overflow-hidden">
-            <div className="max-h-[220px] overflow-auto">
+            <div className="max-h-[400px] overflow-auto">
               <Table>
                 <TableHeader className="bg-slate-50 sticky top-0 z-10 shadow-sm">
                   <TableRow>

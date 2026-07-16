@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 const NAV_ITEMS = [
-  { to: '/', label: 'Imersão Labs' },
+  { to: '/', label: 'Geral' },
+  { to: '/imersao', label: 'Imersão Labs' },
   { to: '/adapta-native', label: 'Adapta Labs Native' },
 ]
 
@@ -25,7 +26,7 @@ export default function Layout() {
         <div className="flex h-14 items-center justify-between px-4 lg:px-8">
           <div className="flex items-center gap-2">
             <h1 className="text-base font-semibold tracking-tight text-slate-900">
-              Dashboard de Vendas — Imersão IA para CEOs
+              Dashboard BU Labs
             </h1>
           </div>
           <div className="flex items-center gap-4">

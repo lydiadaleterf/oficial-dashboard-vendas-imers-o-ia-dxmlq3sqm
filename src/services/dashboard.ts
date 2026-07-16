@@ -119,15 +119,13 @@ export const fetchDashboardData = async (
         supabase
           .from('entradas_sem_vaga_hubspot')
           .select('nome, email, dt_entrada, link_hubspot, dealstage_nome')
-          .order('dt_entrada', { ascending: false })
-          .limit(50),
+          .order('dt_entrada', { ascending: false }),
       ),
       applyFF(
         supabase
           .from('vendas_vendedor_diario_imersao')
           .select('dia, vendedor, vendas')
-          .order('dia', { ascending: false })
-          .limit(500),
+          .order('dia', { ascending: false }),
       ),
       applyFF(
         supabase

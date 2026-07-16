@@ -79,7 +79,7 @@ export default function Index() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <div>
           <h1 className="text-xl md:text-2xl font-bold text-slate-800">
-            Dashboard de Vendas — Imersão de IA para CEOs
+            Imersão de IA para CEOs — Dashboard BU Labs
           </h1>
           <p className="text-sm text-slate-500 mt-0.5">
             Visão consolidada dos funis Skip e Lançamento Interno
