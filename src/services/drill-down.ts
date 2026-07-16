@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase/client'
+import { getFunnelLabel } from '@/lib/funnel-labels'
 
 export type DrillDownType = 'vagas-fechadas' | 'receita' | 'entradas-pendentes' | 'reembolsos'
 
@@ -66,18 +67,32 @@ export function filterVagasFechadas(
   })
 }
 
-export async function fetchDrillDownData(type: DrillDownType): Promise<DrillDownResult> {
+export async function fetchDrillDownData(
+  type: DrillDownType,
+  selectedFunnels: string[] = [],
+): Promise<DrillDownResult> {
+  const funnelLabelSuffix =
+    selectedFunnels.length > 0
+      ? ` — ${selectedFunnels.map((f) => getFunnelLabel(f)).join(', ')}`
+      : ''
+
   switch (type) {
     case 'vagas-fechadas': {
-      const { data } = await supabase
+      let query = supabase
         .from('vagas_fechadas_agendamento')
-        .select('nome, email, data_vaga_fechada, status_agendamento')
-        .order('data_vaga_fechada', { ascending: false })
+        .select('nome, email, funil, data_vaga_fechada, status_agendamento')
+
+      if (selectedFunnels.length > 0) {
+        query = query.in('funil', selectedFunnels)
+      }
+
+      const { data } = await query.order('data_vaga_fechada', { ascending: false })
       return {
-        title: 'Vagas Fechadas — Detalhamento',
+        title: 'Vagas Fechadas — Detalhamento' + funnelLabelSuffix,
         columns: [
           { key: 'nome', label: 'Nome' },
           { key: 'email', label: 'Email' },
+          { key: 'funil', label: 'Funil' },
           { key: 'data_vaga_fechada', label: 'Data Vaga Fechada', format: 'date' as const },
           { key: 'status_agendamento', label: 'Status Agendamento' },
         ],

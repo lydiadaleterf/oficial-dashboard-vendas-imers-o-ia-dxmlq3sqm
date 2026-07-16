@@ -21,6 +21,7 @@ import {
 interface DrillDownDialogProps {
   type: DrillDownType | null
   onClose: () => void
+  selectedFunnels?: string[]
   preloadedRecords?: Record<string, any>[]
   preloadedColumns?: DrillDownColumn[]
   preloadedTitle?: string
@@ -29,6 +30,7 @@ interface DrillDownDialogProps {
 export function DrillDownDialog({
   type,
   onClose,
+  selectedFunnels = [],
   preloadedRecords,
   preloadedColumns,
   preloadedTitle,
@@ -45,7 +47,7 @@ export function DrillDownDialog({
     if (!type || usePreloaded) return
     setLoading(true)
     try {
-      const result = await fetchDrillDownData(type)
+      const result = await fetchDrillDownData(type, selectedFunnels)
       setTitle(result?.title ?? '')
       setColumns(result?.columns ?? [])
       setRecords(result?.records ?? [])
@@ -56,7 +58,7 @@ export function DrillDownDialog({
     } finally {
       setLoading(false)
     }
-  }, [type, usePreloaded])
+  }, [type, usePreloaded, selectedFunnels])
 
   useEffect(() => {
     if (usePreloaded) {

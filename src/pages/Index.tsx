@@ -116,7 +116,11 @@ export default function Index() {
 
       <TablesSection data={data} />
 
-      <DrillDownDialog type={drillDownType} onClose={() => setDrillDownType(null)} />
+      <DrillDownDialog
+        type={drillDownType}
+        onClose={() => setDrillDownType(null)}
+        selectedFunnels={selectedFunnels}
+      />
     </div>
   )
 }
