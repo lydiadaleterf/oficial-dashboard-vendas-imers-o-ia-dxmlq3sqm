@@ -32,6 +32,18 @@ const SCHEDULED_STATUSES = ['confirmed', 'agendado', 'scheduled', 'confirmado']
 const UNSCHEDULED_STATUSES = ['nao_agendou', 'nao_agendado', 'not_scheduled', 'no_show']
 const FULL_PAYMENT_THRESHOLD = 9000
 
+function parseDate(val: unknown): string | null {
+  if (!val) return null
+  const s = String(val).trim()
+  if (!s || s.toLowerCase() === 'null' || s.toLowerCase() === 'none') return null
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.substring(0, 10)
+  const brMatch = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/)
+  if (brMatch) return `${brMatch[3]}-${brMatch[2]}-${brMatch[1]}`
+  const tsMatch = s.match(/^(\d{4})\/(\d{2})\/(\d{2})/)
+  if (tsMatch) return `${tsMatch[1]}-${tsMatch[2]}-${tsMatch[3]}`
+  return null
+}
+
 function filterByDate(
   rows: Record<string, any>[],
   col: string,
@@ -39,9 +51,8 @@ function filterByDate(
 ): Record<string, any>[] {
   if (!dateRange) return rows
   return rows.filter((r) => {
-    const val = r[col]
-    if (!val) return false
-    const date = String(val).substring(0, 10)
+    const date = parseDate(r[col])
+    if (!date) return false
     if (dateRange.startDate && date < dateRange.startDate) return false
     if (dateRange.endDate && date > dateRange.endDate) return false
     return true
@@ -210,9 +221,7 @@ export function processDashboardData(
     f.taxaAgendamento = f.vagasFechadas > 0 ? (scheduled / f.vagasFechadas) * 100 : 0
   })
 
-  const kpiVagas = dateRange
-    ? chartData.reduce((sum, d) => sum + d.vagas_fechadas, 0)
-    : funnels.reduce((sum, f) => sum + f.vagasFechadas, 0)
+  const kpiVagas = vagasFechadas.length
   const pmTotal = parcelado + aVista + vendaDireta
   const geoData: GeoDataPoint[] = Array.from(geoEmailMap.entries())
     .map(([estado, emails]) => ({ estado, count: emails.size }))
