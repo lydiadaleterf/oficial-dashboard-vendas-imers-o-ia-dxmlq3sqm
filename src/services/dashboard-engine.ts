@@ -214,19 +214,12 @@ export function processDashboardData(
     f.selfServicePct = total > 0 ? (f.selfServiceQtd / total) * 100 : 0
     f.vendedorPct = total > 0 ? (f.vendedorQtd / total) * 100 : 0
   })
-  // Deduplicate vagasFechadas by email — one vaga per person.
-  const vagasFechadasSeenEmails = new Set<string>()
-  const dedupedVagasFechadas = vagasFechadas.filter((v) => {
-    const email = (v.email || '').toString().trim().toLowerCase()
-    if (email && vagasFechadasSeenEmails.has(email)) return false
-    if (email) vagasFechadasSeenEmails.add(email)
-    return true
-  })
   const vagasFechadasByFunil = new Map<string, number>()
   dedupedVagasFechadas.forEach((v) => {
     const fn = v.funil || 'Unknown'
     vagasFechadasByFunil.set(fn, (vagasFechadasByFunil.get(fn) || 0) + 1)
-  })  funnels.forEach((f) => {
+  })
+  funnels.forEach((f) => {
     const fNorm = normalizeFunil(f.nome)
     let count = 0
     vagasFechadasByFunil.forEach((v, k) => {
