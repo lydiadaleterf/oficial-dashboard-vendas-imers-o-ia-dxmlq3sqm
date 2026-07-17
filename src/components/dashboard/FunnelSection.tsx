@@ -97,8 +97,41 @@ function PagamentosIntegraisCard({ data }: { data: PagamentosIntegraisData }) {
       maximumFractionDigits: 0,
     }).format(val)
 
-  return
-  null
+  return (
+    <Card
+      className="shadow-subtle border-slate-200 animate-fade-in-up"
+      style={{ animationDelay: '200ms' }}
+    >
+      <CardHeader className="pb-2 border-b bg-slate-50/50">
+        <CardTitle className="text-lg font-semibold text-slate-800 uppercase tracking-wide">
+          Pagamentos Integrais
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-6">
+        <div className="flex items-center justify-center gap-8">
+          <div className="flex flex-col items-center">
+            <div className="flex items-center gap-2 mb-1">
+              <Banknote className="w-4 h-4 text-teal-500" />
+              <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+                Quantidade
+              </span>
+            </div>
+            <span className="text-2xl font-bold text-slate-800">{data.count}</span>
+          </div>
+          <div className="w-px h-12 bg-slate-200" />
+          <div className="flex flex-col items-center">
+            <div className="flex items-center gap-2 mb-1">
+              <Banknote className="w-4 h-4 text-teal-500" />
+              <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+                Valor Total
+              </span>
+            </div>
+            <span className="text-2xl font-bold text-teal-600">{formatCurrency(data.valor)}</span>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
 }
 
 export function FunnelSection({
