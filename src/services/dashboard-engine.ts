@@ -69,6 +69,16 @@ function filterByFunnels(rows: Record<string, any>[], ff: string[]): Record<stri
   return rows.filter((r) => ff.includes(r.funil))
 }
 
+function getDedupeKey(row: Record<string, any>): string {
+  const doc = (row.doc || '').toString().trim()
+  if (doc) return `doc:${doc.toLowerCase()}`
+  const email = (row.email || '').toString().trim().toLowerCase()
+  if (email) return `email:${email}`
+  const dealId = (row.deal_id || '').toString().trim()
+  if (dealId) return `deal:${dealId}`
+  return ''
+}
+
 export function processDashboardData(
   raw: RawDashboardData,
   selectedFunnels: FunnelSelection = [],
@@ -126,10 +136,19 @@ export function processDashboardData(
     a.dia.localeCompare(b.dia),
   )
 
+  // Deduplicate vagasFechadas by email — one vaga per person.
+  const vagasFechadasSeenEmails = new Set<string>()
+  const dedupedVagasFechadas = vagasFechadas.filter((v) => {
+    const email = (v.email || '').toString().trim().toLowerCase()
+    if (email && vagasFechadasSeenEmails.has(email)) return false
+    if (email) vagasFechadasSeenEmails.add(email)
+    return true
+  })
+
   let taxaAgendamento = 0
   const agendamentosPendentes: TableAgendamentoRow[] = []
-  if (vagasFechadas.length > 0) {
-    const relevant = vagasFechadas.filter((a) => {
+  if (dedupedVagasFechadas.length > 0) {
+    const relevant = dedupedVagasFechadas.filter((a) => {
       const s = (a.status_agendamento || '').toLowerCase()
       return SCHEDULED_STATUSES.includes(s) || UNSCHEDULED_STATUSES.includes(s)
     })
@@ -137,7 +156,7 @@ export function processDashboardData(
       SCHEDULED_STATUSES.includes((a.status_agendamento || '').toLowerCase()),
     ).length
     taxaAgendamento = relevant.length > 0 ? (scheduled / relevant.length) * 100 : 0
-    vagasFechadas
+    dedupedVagasFechadas
       .filter((a) => UNSCHEDULED_STATUSES.includes((a.status_agendamento || '').toLowerCase()))
       .forEach((a) =>
         agendamentosPendentes.push({
@@ -147,7 +166,6 @@ export function processDashboardData(
         }),
       )
   }
-
   const funnelMap = new Map<string, FunnelData>()
   funilRaw.forEach((row) => {
     const name = row.funil
@@ -166,9 +184,19 @@ export function processDashboardData(
       })
     }
     const fd = funnelMap.get(name)!
-    fd.vendaProduto1 += safeNum(row.venda_produto1)
-    fd.vendaEntrada += safeNum(row.venda_entrada)
-    fd.vagasFechadas += safeNum(row.vagas_fechadas)
+    // venda_produto1, venda_entrada, and vagas_fechadas are funnel-level
+    // metrics repeated in every per-seller row. Only take from the first
+    // row to prevent multi-row (triple) counting.
+    if (fd.vendaProduto1 === 0 && safeNum(row.venda_produto1) > 0) {
+      fd.vendaProduto1 = safeNum(row.venda_produto1)
+    }
+    if (fd.vendaEntrada === 0 && safeNum(row.venda_entrada) > 0) {
+      fd.vendaEntrada = safeNum(row.venda_entrada)
+    }
+    if (fd.vagasFechadas === 0 && safeNum(row.vagas_fechadas) > 0) {
+      fd.vagasFechadas = safeNum(row.vagas_fechadas)
+    }
+    // self_service_qtd, vendedor_qtd, and vendas_do_vendedor are per-seller values
     fd.selfServiceQtd += safeNum(row.self_service_qtd)
     fd.vendedorQtd += safeNum(row.vendedor_qtd)
     if (row.vendedor && row.vendedor.trim() && row.vendedor !== 'NULL') {
@@ -186,18 +214,25 @@ export function processDashboardData(
     f.selfServicePct = total > 0 ? (f.selfServiceQtd / total) * 100 : 0
     f.vendedorPct = total > 0 ? (f.vendedorQtd / total) * 100 : 0
   })
+  // Deduplicate vagasFechadas by email — one vaga per person.
+  const vagasFechadasSeenEmails = new Set<string>()
+  const dedupedVagasFechadas = vagasFechadas.filter((v) => {
+    const email = (v.email || '').toString().trim().toLowerCase()
+    if (email && vagasFechadasSeenEmails.has(email)) return false
+    if (email) vagasFechadasSeenEmails.add(email)
+    return true
+  })
   const vagasFechadasByFunil = new Map<string, number>()
-  vagasFechadas.forEach((v) => {
+  dedupedVagasFechadas.forEach((v) => {
     const fn = v.funil || 'Unknown'
     vagasFechadasByFunil.set(fn, (vagasFechadasByFunil.get(fn) || 0) + 1)
-  })
-  funnels.forEach((f) => {
+  })  funnels.forEach((f) => {
     const fNorm = normalizeFunil(f.nome)
     let count = 0
     vagasFechadasByFunil.forEach((v, k) => {
       if (normalizeFunil(k) === fNorm) count += v
     })
-    if (count > 0 || vagasFechadas.length > 0) f.vagasFechadas = count
+    if (count > 0 || dedupedVagasFechadas.length > 0) f.vagasFechadas = count
   })
 
   let parcelado = 0,
@@ -212,14 +247,32 @@ export function processDashboardData(
   const geoEmailMap = new Map<string, Set<string>>()
   const vendaDireta = funnels.reduce((s, f) => s + f.vendedorQtd, 0)
 
+  const seenApprovedEntradaKeys = new Set<string>()
+  const seenNonRefundKeys = new Set<string>()
+  const seenRefundKeys = new Set<string>()
+
   transacoes.forEach((row) => {
     const valor = safeNum(row.valor_pago)
     const status = (row.status || '').toLowerCase()
-    if (status === 'approved' && isEntradaOffer(row.oferta)) approvedCount++
+    const dedupeKey = getDedupeKey(row)
+
+    if (status === 'approved' && isEntradaOffer(row.oferta)) {
+      if (dedupeKey === '' || !seenApprovedEntradaKeys.has(dedupeKey)) {
+        if (dedupeKey) seenApprovedEntradaKeys.add(dedupeKey)
+        approvedCount++
+      }
+    }
+
     if (isRefundStatus(status)) {
-      refundCount++
-      refundValor += valor
+      if (dedupeKey === '' || !seenRefundKeys.has(dedupeKey)) {
+        if (dedupeKey) seenRefundKeys.add(dedupeKey)
+        refundCount++
+        refundValor += valor
+      }
     } else {
+      if (dedupeKey !== '' && seenNonRefundKeys.has(dedupeKey)) return
+      if (dedupeKey) seenNonRefundKeys.add(dedupeKey)
+
       if (valor >= FULL_PAYMENT_THRESHOLD) {
         aVista++
         if (isVagaFechada(row.is_vaga_fechada)) {
@@ -243,10 +296,16 @@ export function processDashboardData(
 
   if (!funilDateCol) {
     const entradasByFunil = new Map<string, number>()
+    const seenEntradaFunilKeys = new Set<string>()
     transacoes.forEach((row) => {
       if ((row.status || '').toLowerCase() === 'approved' && isEntradaOffer(row.oferta)) {
         const fn = row.funil || 'Unknown'
-        entradasByFunil.set(fn, (entradasByFunil.get(fn) || 0) + 1)
+        const dk = getDedupeKey(row)
+        const compositeKey = `${fn}|${dk}`
+        if (dk === '' || !seenEntradaFunilKeys.has(compositeKey)) {
+          if (dk) seenEntradaFunilKeys.add(compositeKey)
+          entradasByFunil.set(fn, (entradasByFunil.get(fn) || 0) + 1)
+        }
       }
     })
     funnels.forEach((f) => {
@@ -260,14 +319,13 @@ export function processDashboardData(
   }
 
   const scheduledByFunil = new Map<string, number>()
-  vagasFechadas.forEach((a) => {
+  dedupedVagasFechadas.forEach((a) => {
     const s = (a.status_agendamento || '').toLowerCase()
     if (SCHEDULED_STATUSES.includes(s)) {
       const fn = a.funil || 'Unknown'
       scheduledByFunil.set(fn, (scheduledByFunil.get(fn) || 0) + 1)
     }
-  })
-  funnels.forEach((f) => {
+  })  funnels.forEach((f) => {
     const fNorm = normalizeFunil(f.nome)
     let scheduled = 0
     scheduledByFunil.forEach((count, k) => {
@@ -277,18 +335,22 @@ export function processDashboardData(
   })
 
   const closedEmails = new Set<string>()
-  vagasFechadas.forEach((v) => {
+  dedupedVagasFechadas.forEach((v) => {
     const email = (v.email || '').toString().trim().toLowerCase()
     if (email) closedEmails.add(email)
-  })
+  })  const entradasPendentesSeenEmails = new Set<string>()
   const entradasPendentesFiltered = entradasSemVaga.filter((e) => {
     const email = (e.email || '').toString().trim().toLowerCase()
     if (closedEmails.has(email)) return false
     if ('oferta' in e && !isEntradaOffer(e.oferta)) return false
+    if (email) {
+      if (entradasPendentesSeenEmails.has(email)) return false
+      entradasPendentesSeenEmails.add(email)
+    }
     return true
   })
 
-  const totalVagasFechadas = vagasFechadas.length
+  const totalVagasFechadas = dedupedVagasFechadas.length
   const kpiEntradasPendentes = entradasPendentesFiltered.length
   const pmTotal = parcelado + aVista + vendaDireta
   const geoData: GeoDataPoint[] = Array.from(geoEmailMap.entries())
@@ -322,24 +384,54 @@ export function processDashboardData(
     }
   })
 
-  const enrichedVagasFechadas = vagasFechadas.map((v) => ({
-    ...v,
-    link_hubspot: (() => {
-      const email = (v.email || '').toString().trim().toLowerCase()
-      return email ? hubspotLinkMap.get(email) || null : null
-    })(),
-  }))
+  const enrichedVagasFechadas: Record<string, any>[] = []
+  dedupedVagasFechadas.forEach((v) => {
+    const email = (v.email || '').toString().trim().toLowerCase()
+    enrichedVagasFechadas.push({
+      ...v,
+      link_hubspot: email ? hubspotLinkMap.get(email) || null : null,
+    })
+  })
+
+  const drillDownEntradas: Record<string, any>[] = []
+  const drillDownEntradaKeys = new Set<string>()
+  transacoes.forEach((t) => {
+    if ((t.status || '').toLowerCase() !== 'approved' || !isEntradaOffer(t.oferta)) return
+    const dk = getDedupeKey(t)
+    if (dk === '' || !drillDownEntradaKeys.has(dk)) {
+      if (dk) drillDownEntradaKeys.add(dk)
+      drillDownEntradas.push(t)
+    }
+  })
+
+  const drillDownReceita: Record<string, any>[] = []
+  const drillDownReceitaKeys = new Set<string>()
+  transacoes.forEach((t) => {
+    if (!isVagaFechada(t.is_vaga_fechada) || isRefundStatus((t.status || '').toLowerCase())) return
+    const dk = getDedupeKey(t)
+    if (dk === '' || !drillDownReceitaKeys.has(dk)) {
+      if (dk) drillDownReceitaKeys.add(dk)
+      drillDownReceita.push(t)
+    }
+  })
+
+  const drillDownReembolsos: Record<string, any>[] = []
+  const drillDownReembolsoKeys = new Set<string>()
+  transacoes.forEach((t) => {
+    if (!isRefundStatus((t.status || '').toLowerCase())) return
+    const dk = getDedupeKey(t)
+    if (dk === '' || !drillDownReembolsoKeys.has(dk)) {
+      if (dk) drillDownReembolsoKeys.add(dk)
+      drillDownReembolsos.push(t)
+    }
+  })
 
   const drillDownRecords = {
-    entradas: transacoes.filter(
-      (t) => (t.status || '').toLowerCase() === 'approved' && isEntradaOffer(t.oferta),
-    ),
+    entradas: drillDownEntradas,
     vagasFechadas: enrichedVagasFechadas,
-    receita: transacoes.filter(
-      (t) => isVagaFechada(t.is_vaga_fechada) && !isRefundStatus((t.status || '').toLowerCase()),
-    ),
+    receita: drillDownReceita,
     entradasPendentes: entradasPendentesFiltered as Record<string, any>[],
-    reembolsos: transacoes.filter((t) => isRefundStatus((t.status || '').toLowerCase())),
+    reembolsos: drillDownReembolsos,
     agendamento: enrichedVagasFechadas,
   }
 
