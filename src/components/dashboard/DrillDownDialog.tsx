@@ -46,17 +46,17 @@ function LinkCell({
   if (!url) return <span className="text-slate-300">—</span>
   const styles =
     variant === 'hubspot'
-      ? 'bg-orange-50 text-orange-600 hover:bg-orange-100'
-      : 'bg-violet-50 text-violet-600 hover:bg-violet-100'
+      ? 'bg-orange-50 text-orange-600 hover:bg-orange-100 active:bg-orange-200'
+      : 'bg-violet-50 text-violet-600 hover:bg-violet-100 active:bg-violet-200'
   return (
     <a
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors ${styles}`}
+      className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium transition-colors min-h-[40px] min-w-[44px] justify-center ${styles}`}
     >
-      <ExternalLink className="w-3 h-3" />
-      {label}
+      <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+      <span className="hidden sm:inline">{label}</span>
     </a>
   )
 }
@@ -100,46 +100,48 @@ export function DrillDownDialog({
         if (!v) onClose()
       }}
     >
-      <DialogContent className="max-w-5xl max-h-[85vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="text-lg font-bold text-slate-800">
+      <DialogContent className="drill-down-dialog w-[92vw] max-w-5xl max-h-[88vh] flex flex-col p-0 gap-0">
+        <DialogHeader className="px-4 sm:px-6 py-4 border-b border-slate-200 shrink-0">
+          <DialogTitle className="text-base sm:text-lg font-bold text-slate-800 pr-8">
             {config?.title || 'Detalhes'}
           </DialogTitle>
         </DialogHeader>
         {records.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="flex flex-col items-center justify-center py-16 text-center px-4">
             <Inbox className="w-12 h-12 text-slate-300 mb-3" />
             <p className="text-sm text-slate-500">Nenhum registro encontrado.</p>
           </div>
         ) : (
           <>
-            <div className="text-sm text-slate-500 mb-2">
+            <div className="px-4 sm:px-6 py-2 text-sm text-slate-500 shrink-0 border-b border-slate-100">
               {records.length} {records.length === 1 ? 'registro' : 'registros'}
             </div>
-            <ScrollArea className="flex-1 border rounded-lg">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    {config?.columns.map((col) => (
-                      <TableHead key={col.key} className="whitespace-nowrap">
-                        {col.label}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {records.map((record, idx) => (
-                    <TableRow key={idx}>
+            <div className="flex-1 overflow-auto min-h-0">
+              <div className="min-w-full inline-block align-top">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="sticky top-0 bg-slate-50 z-10">
                       {config?.columns.map((col) => (
-                        <TableCell key={col.key} className="whitespace-nowrap">
-                          {renderCell(record, col)}
-                        </TableCell>
+                        <TableHead key={col.key} className="whitespace-nowrap text-xs sm:text-sm">
+                          {col.label}
+                        </TableHead>
                       ))}
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </ScrollArea>
+                  </TableHeader>
+                  <TableBody>
+                    {records.map((record, idx) => (
+                      <TableRow key={idx} className="hover:bg-slate-50/50">
+                        {config?.columns.map((col) => (
+                          <TableCell key={col.key} className="whitespace-nowrap py-3 px-3 sm:px-4">
+                            {renderCell(record, col)}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
           </>
         )}
       </DialogContent>
