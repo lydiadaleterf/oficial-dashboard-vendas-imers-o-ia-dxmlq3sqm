@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { FunnelData, PagamentosIntegraisData } from '@/services/dashboard'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { ArrowDown, Banknote, CalendarCheck } from 'lucide-react'
+import { ArrowDown, CalendarCheck } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getFunnelLabel } from '@/lib/funnel-labels'
 
@@ -90,15 +90,7 @@ function SchedulingConversion({ pct }: { pct: number }) {
 }
 
 function PagamentosIntegraisCard({ data }: { data: PagamentosIntegraisData }) {
-  const formatCurrency = (val: number) =>
-    new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-      maximumFractionDigits: 0,
-    }).format(val)
-
-  return
-  null
+  return null
 }
 
 export function FunnelSection({

@@ -83,79 +83,79 @@ export default function Index() {
     return <Navigate to="/login" replace />
   }
 
-  if (loading) {
-    return <LoadingSkeleton />
-  }
-
-  if (error || !data) {
-    return <ErrorState error={error} onRetry={refresh} />
-  }
-
   return (
-    <div
-      className={cn(
-        'space-y-2 p-4 md:p-6 max-w-7xl mx-auto transition-opacity duration-300',
-        filtering && 'opacity-60',
-      )}
-    >
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-        <div>
-          <h1 className="text-xl md:text-2xl font-bold text-slate-800">
-            Imersão de IA para CEOs — Dashboard BU Labs
-          </h1>
-          <p className="text-sm text-slate-500 mt-0.5">
-            Visão consolidada dos funis Skip e Lançamento Interno
-          </p>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={refresh}
-          disabled={refreshing}
-          className="shrink-0"
+    <div className="min-h-[60vh]">
+      {loading ? (
+        <LoadingSkeleton />
+      ) : error || !data ? (
+        <ErrorState error={error} onRetry={refresh} />
+      ) : (
+        <div
+          className={cn(
+            'space-y-2 p-4 md:p-6 max-w-7xl mx-auto transition-opacity duration-300',
+            filtering && 'opacity-60',
+          )}
         >
-          <RefreshCw className={cn('w-4 h-4 mr-2', refreshing && 'animate-spin')} />
-          Atualizar
-        </Button>
-      </div>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+            <div>
+              <h1 className="text-xl md:text-2xl font-bold text-slate-800">
+                Imersão de IA para CEOs — Dashboard BU Labs
+              </h1>
+              <p className="text-sm text-slate-500 mt-0.5">
+                Visão consolidada dos funis Skip e Lançamento Interno
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={refresh}
+              disabled={refreshing}
+              className="shrink-0"
+            >
+              <RefreshCw className={cn('w-4 h-4 mr-2', refreshing && 'animate-spin')} />
+              Atualizar
+            </Button>
+          </div>
 
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-        <FunnelFilter selected={selectedFunnels} onChange={setSelectedFunnels} />
-        <DateRangeFilter
-          activePeriod={activePeriod}
-          onPeriodChange={setActivePeriod}
-          dateRange={dateRange}
-          onDateRangeChange={setDateRange}
-        />
-      </div>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+            <FunnelFilter selected={selectedFunnels} onChange={setSelectedFunnels} />
+            <DateRangeFilter
+              activePeriod={activePeriod}
+              onPeriodChange={setActivePeriod}
+              dateRange={dateRange}
+              onDateRangeChange={setDateRange}
+            />
+          </div>
 
-      {data.isPartial && (
-        <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-2 animate-fade-in">
-          <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
-          <span className="text-sm text-amber-700">
-            Alguns dados podem estar incompletos devido a erros parciais na carga.
-          </span>
+          {data.isPartial && (
+            <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-2 animate-fade-in">
+              <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+              <span className="text-sm text-amber-700">
+                Alguns dados podem estar incompletos devido a erros parciais na carga.
+              </span>
+            </div>
+          )}
+
+          <KPICards data={data.kpis} onCardClick={setDrillDownType} />
+
+          <FunnelSection
+            funnels={data.funnels}
+            pagamentosIntegrais={data.pagamentosIntegrais}
+            filtering={filtering}
+          />
+
+          <ChartsSection data={data.chartData} geoData={data.geoData} />
+
+          <TablesSection data={data} />
+
+          <DrillDownDialog
+            type={drillDownType}
+            onClose={() => setDrillDownType(null)}
+            selectedFunnels={selectedFunnels}
+            drillDownData={data.drillDown}
+          />
         </div>
       )}
-
-      <KPICards data={data.kpis} onCardClick={setDrillDownType} />
-
-      <FunnelSection
-        funnels={data.funnels}
-        pagamentosIntegrais={data.pagamentosIntegrais}
-        filtering={filtering}
-      />
-
-      <ChartsSection data={data.chartData} geoData={data.geoData} />
-
-      <TablesSection data={data} />
-
-      <DrillDownDialog
-        type={drillDownType}
-        onClose={() => setDrillDownType(null)}
-        selectedFunnels={selectedFunnels}
-        drillDownData={data.drillDown}
-      />
     </div>
   )
 }
