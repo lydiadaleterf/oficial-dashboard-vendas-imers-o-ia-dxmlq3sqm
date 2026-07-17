@@ -214,18 +214,30 @@ export function processDashboardData(
     f.selfServicePct = total > 0 ? (f.selfServiceQtd / total) * 100 : 0
     f.vendedorPct = total > 0 ? (f.vendedorQtd / total) * 100 : 0
   })
-  const vagasFechadasByFunil = new Map<string, number>()
-  dedupedVagasFechadas.forEach((v) => {
-    const fn = v.funil || 'Unknown'
-    vagasFechadasByFunil.set(fn, (vagasFechadasByFunil.get(fn) || 0) + 1)
+  const FULL_TICKET_VALUE = 10000
+  const vagasGarantidasByFunil = new Map<string, number>()
+  const vagasGarantidasSeenKeys = new Set<string>()
+  transacoes.forEach((row) => {
+    const status = (row.status || '').toLowerCase()
+    if (isRefundStatus(status)) return
+    const oferta = String(row.oferta || '').toLowerCase()
+    if (oferta.includes('entrada')) return
+    const valor = safeNum(row.valor_pago)
+    if (valor !== FULL_TICKET_VALUE) return
+    const dk = getDedupeKey(row)
+    const fn = row.funil || 'Unknown'
+    const compositeKey = `${fn}|${dk}`
+    if (dk !== '' && vagasGarantidasSeenKeys.has(compositeKey)) return
+    if (dk) vagasGarantidasSeenKeys.add(compositeKey)
+    vagasGarantidasByFunil.set(fn, (vagasGarantidasByFunil.get(fn) || 0) + 1)
   })
   funnels.forEach((f) => {
     const fNorm = normalizeFunil(f.nome)
     let count = 0
-    vagasFechadasByFunil.forEach((v, k) => {
+    vagasGarantidasByFunil.forEach((v, k) => {
       if (normalizeFunil(k) === fNorm) count += v
     })
-    if (count > 0 || dedupedVagasFechadas.length > 0) f.vagasFechadas = count
+    f.vagasFechadas = count
   })
 
   let parcelado = 0,
