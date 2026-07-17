@@ -32,6 +32,11 @@ const SCHEDULED_STATUSES = ['confirmed', 'agendado', 'scheduled', 'confirmado']
 const UNSCHEDULED_STATUSES = ['nao_agendou', 'nao_agendado', 'not_scheduled', 'no_show']
 const FULL_PAYMENT_THRESHOLD = 9000
 
+function isEntradaOffer(oferta: unknown): boolean {
+  if (oferta === null || oferta === undefined) return false
+  return String(oferta).toLowerCase().includes('entrada')
+}
+
 function parseDate(val: unknown): string | null {
   if (!val) return null
   const s = String(val).trim()
@@ -210,7 +215,7 @@ export function processDashboardData(
   transacoes.forEach((row) => {
     const valor = safeNum(row.valor_pago)
     const status = (row.status || '').toLowerCase()
-    if (status === 'approved') approvedCount++
+    if (status === 'approved' && isEntradaOffer(row.oferta)) approvedCount++
     if (isRefundStatus(status)) {
       refundCount++
       refundValor += valor
@@ -239,7 +244,7 @@ export function processDashboardData(
   if (!funilDateCol) {
     const entradasByFunil = new Map<string, number>()
     transacoes.forEach((row) => {
-      if ((row.status || '').toLowerCase() === 'approved') {
+      if ((row.status || '').toLowerCase() === 'approved' && isEntradaOffer(row.oferta)) {
         const fn = row.funil || 'Unknown'
         entradasByFunil.set(fn, (entradasByFunil.get(fn) || 0) + 1)
       }
@@ -278,7 +283,9 @@ export function processDashboardData(
   })
   const entradasPendentesFiltered = entradasSemVaga.filter((e) => {
     const email = (e.email || '').toString().trim().toLowerCase()
-    return !closedEmails.has(email)
+    if (closedEmails.has(email)) return false
+    if ('oferta' in e && !isEntradaOffer(e.oferta)) return false
+    return true
   })
 
   const totalVagasFechadas = vagasFechadas.length
@@ -324,7 +331,9 @@ export function processDashboardData(
   }))
 
   const drillDownRecords = {
-    entradas: transacoes.filter((t) => (t.status || '').toLowerCase() === 'approved'),
+    entradas: transacoes.filter(
+      (t) => (t.status || '').toLowerCase() === 'approved' && isEntradaOffer(t.oferta),
+    ),
     vagasFechadas: enrichedVagasFechadas,
     receita: transacoes.filter(
       (t) => isVagaFechada(t.is_vaga_fechada) && !isRefundStatus((t.status || '').toLowerCase()),
