@@ -8,6 +8,7 @@ import { getFunnelLabel } from '@/lib/funnel-labels'
 interface FunnelSectionProps {
   funnels: FunnelData[]
   pagamentosIntegrais: PagamentosIntegraisData
+  filtering?: boolean
 }
 
 type TrapezoidDirection = 'narrow' | 'widen' | 'flat'
@@ -122,7 +123,7 @@ function PagamentosIntegraisCard({ data }: { data: PagamentosIntegraisData }) {
             </p>
           </div>
           <p className="text-xs text-slate-400 text-center italic">
-            Pagamentos integrais excluídos do funil
+            Pagamentos integrais incluídos no total do funil
           </p>
         </div>
       </CardContent>
@@ -130,7 +131,11 @@ function PagamentosIntegraisCard({ data }: { data: PagamentosIntegraisData }) {
   )
 }
 
-export function FunnelSection({ funnels, pagamentosIntegrais }: FunnelSectionProps) {
+export function FunnelSection({
+  funnels,
+  pagamentosIntegrais,
+  filtering = false,
+}: FunnelSectionProps) {
   const hasPagamentos = pagamentosIntegrais.count > 0
   const gridClass = cn(
     'grid gap-6 mb-6',
@@ -140,7 +145,15 @@ export function FunnelSection({ funnels, pagamentosIntegrais }: FunnelSectionPro
   )
 
   return (
-    <div className={gridClass}>
+    <div className={cn('relative', gridClass)}>
+      {filtering && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/70 backdrop-blur-sm rounded-lg animate-fade-in">
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-8 h-8 border-4 border-slate-200 border-t-teal-500 rounded-full animate-spin" />
+            <span className="text-xs font-medium text-slate-500">Atualizando funil...</span>
+          </div>
+        </div>
+      )}
       {funnels.map((funnel) => {
         const isSkip = funnel.nome.toLowerCase().includes('skip')
         const maxVal = Math.max(funnel.vendaProduto1, funnel.vendaEntrada, funnel.vagasFechadas, 1)

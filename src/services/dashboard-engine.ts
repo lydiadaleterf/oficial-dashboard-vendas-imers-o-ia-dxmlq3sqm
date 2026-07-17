@@ -236,12 +236,23 @@ export function processDashboardData(
     }
   })
 
-  funnels.forEach((f) => {
-    const fNorm = normalizeFunil(f.nome)
-    fullPaymentByFunil.forEach((v, k) => {
-      if (normalizeFunil(k) === fNorm) f.vagasFechadas = Math.max(0, f.vagasFechadas - v.count)
+  if (!funilDateCol) {
+    const entradasByFunil = new Map<string, number>()
+    transacoes.forEach((row) => {
+      if ((row.status || '').toLowerCase() === 'approved') {
+        const fn = row.funil || 'Unknown'
+        entradasByFunil.set(fn, (entradasByFunil.get(fn) || 0) + 1)
+      }
     })
-  })
+    funnels.forEach((f) => {
+      const fNorm = normalizeFunil(f.nome)
+      let count = 0
+      entradasByFunil.forEach((v, k) => {
+        if (normalizeFunil(k) === fNorm) count += v
+      })
+      f.vendaEntrada = count
+    })
+  }
 
   const scheduledByFunil = new Map<string, number>()
   vagasFechadas.forEach((a) => {

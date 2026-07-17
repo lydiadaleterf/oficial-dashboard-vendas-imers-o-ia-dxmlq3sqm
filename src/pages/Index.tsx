@@ -140,7 +140,11 @@ export default function Index() {
 
       <KPICards data={data.kpis} onCardClick={setDrillDownType} />
 
-      <FunnelSection funnels={data.funnels} pagamentosIntegrais={data.pagamentosIntegrais} />
+      <FunnelSection
+        funnels={data.funnels}
+        pagamentosIntegrais={data.pagamentosIntegrais}
+        filtering={filtering}
+      />
 
       <ChartsSection data={data.chartData} geoData={data.geoData} />
 

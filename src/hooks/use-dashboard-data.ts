@@ -54,7 +54,7 @@ export const useDashboardData = (selectedFunnels: FunnelSelection = [], dateRang
     const changed = prev.funnelsKey !== funnelsKey || prev.dateKey !== dateKey
     if (changed && rawData) {
       setFiltering(true)
-      const t = setTimeout(() => setFiltering(false), 300)
+      const t = setTimeout(() => setFiltering(false), 500)
       prevFiltersRef.current = { funnelsKey, dateKey }
       return () => clearTimeout(t)
     }
