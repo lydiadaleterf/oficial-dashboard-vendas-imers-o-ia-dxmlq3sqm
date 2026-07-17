@@ -363,11 +363,19 @@ export function processDashboardData(
     if (a.dia !== b.dia) return b.dia.localeCompare(a.dia)
     return b.vendas - a.vendas
   })
-  const sellerMap = new Map<string, number>()
-  sellerDailyData.forEach((e) =>
-    sellerMap.set(e.vendedor, (sellerMap.get(e.vendedor) || 0) + e.vendas),
-  )
-  const sellerRanking: SellerRankingEntry[] = Array.from(sellerMap.entries())
+  const approvedSellerMap = new Map<string, number>()
+  const seenSellerKeys = new Set<string>()
+  transacoes.forEach((t) => {
+    if ((t.status || '').toLowerCase() !== 'approved') return
+    if (!isEntradaOffer(t.oferta)) return
+    const vendedor = (t.vendedor || '').toString().trim()
+    if (!vendedor || vendedor === 'NULL') return
+    const dk = getDedupeKey(t)
+    if (dk !== '' && seenSellerKeys.has(dk)) return
+    if (dk) seenSellerKeys.add(dk)
+    approvedSellerMap.set(vendedor, (approvedSellerMap.get(vendedor) || 0) + 1)
+  })
+  const sellerRanking: SellerRankingEntry[] = Array.from(approvedSellerMap.entries())
     .map(([vendedor, totalVendas]) => ({ vendedor, totalVendas }))
     .sort((a, b) => b.totalVendas - a.totalVendas)
 

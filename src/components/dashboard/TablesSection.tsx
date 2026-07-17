@@ -9,7 +9,8 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { DashboardData } from '@/services/dashboard'
-import { ExternalLink, AlertCircle, Clock, Trophy } from 'lucide-react'
+import { ExternalLink, AlertCircle, Clock } from 'lucide-react'
+import { SellerRanking } from '@/components/dashboard/SellerRanking'
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
@@ -135,50 +136,7 @@ export function TablesSection({ data }: TablesSectionProps) {
           </CardContent>
         </Card>
 
-        <Card className="shadow-subtle border-slate-200 flex-1 flex flex-col">
-          <CardHeader className="pb-3 border-b bg-white">
-            <CardTitle className="text-base font-semibold flex items-center gap-2 text-slate-800">
-              <Trophy className="w-4 h-4 text-amber-500" />
-              Venda por Vendedor por Dia
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0 flex-1 overflow-hidden">
-            <div className="max-h-[400px] overflow-auto">
-              <Table>
-                <TableHeader className="bg-slate-50 sticky top-0 z-10 shadow-sm">
-                  <TableRow>
-                    <TableHead className="text-xs h-8">Data</TableHead>
-                    <TableHead className="text-xs h-8">Vendedor</TableHead>
-                    <TableHead className="text-xs h-8 text-right">Vendas</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data.sellerDailyData.length > 0 ? (
-                    data.sellerDailyData.map((row, i) => (
-                      <TableRow key={i} className="hover:bg-slate-50 border-slate-100">
-                        <TableCell className="text-xs py-2 text-slate-600">
-                          {formatDate(row.dia)}
-                        </TableCell>
-                        <TableCell className="text-xs font-medium text-slate-700">
-                          {row.vendedor}
-                        </TableCell>
-                        <TableCell className="text-xs text-right font-bold text-teal-600">
-                          {row.vendas}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={3} className="text-center py-4 text-sm text-slate-500">
-                        Sem dados
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
+        <SellerRanking data={data.sellerRanking} />
       </div>
     </div>
   )
