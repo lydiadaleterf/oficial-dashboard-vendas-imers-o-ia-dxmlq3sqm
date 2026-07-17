@@ -132,35 +132,14 @@ export function processDashboardData(
     e.vagas_fechadas += safeNum(row.vagas_fechadas)
     e.receita_fechada += safeNum(row.receita_fechada)
   })
+  // dashboard_diario_imersao já vem no grão dia x funil, pronto pra SOMAR por dia
+  // (regra do dado). Não recalcular a partir de transacoes: cada pessoa pode ter
+  // mais de um pagamento legítimo (ex.: Entrada + Finalização), e deduplicar por
+  // pessoa nesse caso descarta pagamentos reais e subconta a receita.
   const chartData: ChartDataPoint[] = Array.from(diarioMap.values()).sort((a, b) =>
     a.dia.localeCompare(b.dia),
   )
-
-  // Compute daily revenue from "Entrada" oferta transactions (deduplicated)
-  const dailyRevenueMap = new Map<string, number>()
-  const seenRevenueDedupeKeys = new Set<string>()
-  transacoes.forEach((row) => {
-    if (!isEntradaOffer(row.oferta)) return
-    const status = (row.status || '').toLowerCase()
-    if (isRefundStatus(status)) return
-    if (!isVagaFechada(row.is_vaga_fechada)) return
-    const date = parseDate(row.data_compra)
-    if (!date) return
-    const dk = getDedupeKey(row)
-    if (dk !== '' && seenRevenueDedupeKeys.has(dk)) return
-    if (dk) seenRevenueDedupeKeys.add(dk)
-    dailyRevenueMap.set(date, (dailyRevenueMap.get(date) || 0) + safeNum(row.valor_pago))
-  })
-  chartData.forEach((d) => {
-    d.receita_fechada = dailyRevenueMap.get(d.dia) || 0
-  })
-  const chartDates = new Set(chartData.map((d) => d.dia))
-  dailyRevenueMap.forEach((valor, dia) => {
-    if (!chartDates.has(dia)) {
-      chartData.push({ dia, entradas_realizadas: 0, vagas_fechadas: 0, receita_fechada: valor })
-    }
-  })
-  chartData.sort((a, b) => a.dia.localeCompare(b.dia))
+  const kpiReceitaFromDiario = chartData.reduce((s, d) => s + d.receita_fechada, 0)
 
   // Deduplicate vagasFechadas by email — one vaga per person.
   const vagasFechadasSeenEmails = new Set<string>()
@@ -210,9 +189,11 @@ export function processDashboardData(
       })
     }
     const fd = funnelMap.get(name)!
-    // venda_produto1, venda_entrada, and vagas_fechadas are funnel-level
-    // metrics repeated in every per-seller row. Only take from the first
-    // row to prevent multi-row (triple) counting.
+    // venda_produto1, venda_entrada, vagas_fechadas, self_service_qtd/pct e
+    // vendedor_qtd/pct são métricas de nível de funil repetidas em toda linha
+    // por vendedor (SELECT sem DISTINCT). Somar entre linhas multiplica esses
+    // valores pelo número de vendedores do funil — só a primeira linha conta.
+    // Só vendas_do_vendedor varia de fato por linha.
     if (fd.vendaProduto1 === 0 && safeNum(row.venda_produto1) > 0) {
       fd.vendaProduto1 = safeNum(row.venda_produto1)
     }
@@ -222,9 +203,14 @@ export function processDashboardData(
     if (fd.vagasFechadas === 0 && safeNum(row.vagas_fechadas) > 0) {
       fd.vagasFechadas = safeNum(row.vagas_fechadas)
     }
-    // self_service_qtd, vendedor_qtd, and vendas_do_vendedor are per-seller values
-    fd.selfServiceQtd += safeNum(row.self_service_qtd)
-    fd.vendedorQtd += safeNum(row.vendedor_qtd)
+    if (fd.selfServiceQtd === 0 && safeNum(row.self_service_qtd) > 0) {
+      fd.selfServiceQtd = safeNum(row.self_service_qtd)
+      fd.selfServicePct = safeNum(row.self_service_pct)
+    }
+    if (fd.vendedorQtd === 0 && safeNum(row.vendedor_qtd) > 0) {
+      fd.vendedorQtd = safeNum(row.vendedor_qtd)
+      fd.vendedorPct = safeNum(row.vendedor_pct)
+    }
     if (row.vendedor && row.vendedor.trim() && row.vendedor !== 'NULL') {
       const existing = fd.sellers.find((s) => s.nome === row.vendedor)
       if (existing) {
@@ -235,11 +221,6 @@ export function processDashboardData(
     }
   })
   const funnels = Array.from(funnelMap.values())
-  funnels.forEach((f) => {
-    const total = f.selfServiceQtd + f.vendedorQtd
-    f.selfServicePct = total > 0 ? (f.selfServiceQtd / total) * 100 : 0
-    f.vendedorPct = total > 0 ? (f.vendedorQtd / total) * 100 : 0
-  })
   const vagasFechadasByFunil = new Map<string, number>()
   dedupedVagasFechadas.forEach((v) => {
     const fn = v.funil || 'Unknown'
@@ -258,7 +239,6 @@ export function processDashboardData(
     aVista = 0,
     refundCount = 0,
     refundValor = 0,
-    kpiReceita = 0,
     approvedCount = 0
   let pagamentosIntegraisCount = 0,
     pagamentosIntegraisValor = 0
@@ -304,7 +284,6 @@ export function processDashboardData(
           fullPaymentByFunil.set(fn, ex)
         }
       } else if (valor > 0) parcelado++
-      if (isVagaFechada(row.is_vaga_fechada)) kpiReceita += valor
     }
     if (isVagaFechada(row.is_vaga_fechada) && row.email) {
       const estado = (row.estado || 'Não informado').trim()
@@ -460,7 +439,7 @@ export function processDashboardData(
     kpis: {
       entradas: approvedCount,
       vagasFechadas: totalVagasFechadas,
-      receitaFechada: kpiReceita,
+      receitaFechada: kpiReceitaFromDiario,
       entradasPendentes: kpiEntradasPendentes,
       taxaAgendamento,
       refunded: refundCount,

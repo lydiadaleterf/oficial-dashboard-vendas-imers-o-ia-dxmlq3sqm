@@ -95,23 +95,50 @@ routerAdd('POST', '/backend/v1/nekt/query', (e) => {
     return e.json(500, { error: 'CSV download returned status ' + csvRes.statusCode })
   }
 
+  // Decodifica bytes UTF-8 corretamente. String.fromCharCode(byte) trata cada
+  // byte como um code point Latin-1, quebrando qualquer acento (ex.: "Imersão"
+  // vira "ImersÃ£o") porque caracteres acentuados ocupam 2+ bytes em UTF-8.
+  function utf8BytesToString(bytes) {
+    var out = ''
+    var i = 0
+    var len = bytes.length
+    while (i < len) {
+      var b1 = bytes[i]
+      if (b1 < 0x80) {
+        out += String.fromCharCode(b1)
+        i += 1
+      } else if ((b1 & 0xe0) === 0xc0 && i + 1 < len) {
+        var b2 = bytes[i + 1]
+        out += String.fromCharCode(((b1 & 0x1f) << 6) | (b2 & 0x3f))
+        i += 2
+      } else if ((b1 & 0xf0) === 0xe0 && i + 2 < len) {
+        var b2e = bytes[i + 1]
+        var b3e = bytes[i + 2]
+        out += String.fromCharCode(((b1 & 0x0f) << 12) | ((b2e & 0x3f) << 6) | (b3e & 0x3f))
+        i += 3
+      } else if ((b1 & 0xf8) === 0xf0 && i + 3 < len) {
+        var b2f = bytes[i + 1]
+        var b3f = bytes[i + 2]
+        var b4f = bytes[i + 3]
+        var cp =
+          ((b1 & 0x07) << 18) | ((b2f & 0x3f) << 12) | ((b3f & 0x3f) << 6) | (b4f & 0x3f)
+        cp -= 0x10000
+        out += String.fromCharCode(0xd800 + (cp >> 10), 0xdc00 + (cp & 0x3ff))
+        i += 4
+      } else {
+        // byte inválido isolado — pula para não travar o parser
+        i += 1
+      }
+    }
+    return out
+  }
+
   var csvText = ''
   var csvBody = csvRes.body
   if (typeof csvBody === 'string') {
     csvText = csvBody
   } else if (csvBody && csvBody.length > 0) {
-    var parts = []
-    var chunkSize = 8192
-    for (var i = 0; i < csvBody.length; i += chunkSize) {
-      var end = i + chunkSize
-      if (end > csvBody.length) end = csvBody.length
-      var chunk = []
-      for (var j = i; j < end; j++) {
-        chunk.push(csvBody[j])
-      }
-      parts.push(String.fromCharCode.apply(null, chunk))
-    }
-    csvText = parts.join('')
+    csvText = utf8BytesToString(csvBody)
   }
 
   var parsedData
