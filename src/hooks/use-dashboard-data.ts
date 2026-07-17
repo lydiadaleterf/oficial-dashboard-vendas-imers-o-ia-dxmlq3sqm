@@ -14,9 +14,11 @@ export const useDashboardData = (selectedFunnels: FunnelSelection = [], dateRang
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [filtering, setFiltering] = useState(false)
   const requestIdRef = useRef(0)
   const funnelsKey = JSON.stringify(selectedFunnels)
   const dateKey = JSON.stringify(dateRange)
+  const prevFiltersRef = useRef({ funnelsKey, dateKey })
 
   const loadData = useCallback(async (isRefresh = false) => {
     const requestId = ++requestIdRef.current
@@ -47,10 +49,22 @@ export const useDashboardData = (selectedFunnels: FunnelSelection = [], dateRang
     loadData()
   }, [loadData])
 
+  useEffect(() => {
+    const prev = prevFiltersRef.current
+    const changed = prev.funnelsKey !== funnelsKey || prev.dateKey !== dateKey
+    if (changed && rawData) {
+      setFiltering(true)
+      const t = setTimeout(() => setFiltering(false), 300)
+      prevFiltersRef.current = { funnelsKey, dateKey }
+      return () => clearTimeout(t)
+    }
+    prevFiltersRef.current = { funnelsKey, dateKey }
+  }, [funnelsKey, dateKey, rawData])
+
   const data = useMemo<DashboardData | null>(() => {
     if (!rawData) return null
     return processDashboardData(rawData, selectedFunnels, dateRange, isPartial)
   }, [rawData, funnelsKey, dateKey, isPartial])
 
-  return { data, loading, refreshing, error, refresh: () => loadData(true) }
+  return { data, loading, refreshing, filtering, error, refresh: () => loadData(true) }
 }

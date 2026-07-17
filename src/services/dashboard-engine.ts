@@ -77,7 +77,23 @@ export function processDashboardData(
     filterByDate(raw.vagasFechadas, 'data_vaga_fechada', dateRange),
     ff,
   )
-  const funilRaw = filterByFunnels(raw.funil, ff)
+  const funilDateCol =
+    raw.funil.length > 0
+      ? Object.keys(raw.funil[0]).find((k) => {
+          const lk = k.toLowerCase()
+          return (
+            lk === 'dia' ||
+            lk === 'data' ||
+            lk === 'date' ||
+            lk === 'data_funil' ||
+            lk === 'created'
+          )
+        }) || null
+      : null
+  const funilRaw = filterByFunnels(
+    funilDateCol ? filterByDate(raw.funil, funilDateCol, dateRange) : raw.funil,
+    ff,
+  )
   const entradasSemVaga = filterByFunnels(
     filterByDate(raw.entradasSemVaga, 'dt_entrada', dateRange),
     ff,
@@ -145,18 +161,39 @@ export function processDashboardData(
       })
     }
     const fd = funnelMap.get(name)!
-    fd.vendaProduto1 = Math.max(fd.vendaProduto1, safeNum(row.venda_produto1))
-    fd.vendaEntrada = Math.max(fd.vendaEntrada, safeNum(row.venda_entrada))
-    fd.vagasFechadas = Math.max(fd.vagasFechadas, safeNum(row.vagas_fechadas))
-    fd.selfServiceQtd = Math.max(fd.selfServiceQtd, safeNum(row.self_service_qtd))
-    fd.selfServicePct = Math.max(fd.selfServicePct, safeNum(row.self_service_pct))
-    fd.vendedorPct = Math.max(fd.vendedorPct, safeNum(row.vendedor_pct))
-    fd.vendedorQtd = Math.max(fd.vendedorQtd, safeNum(row.vendedor_qtd))
+    fd.vendaProduto1 += safeNum(row.venda_produto1)
+    fd.vendaEntrada += safeNum(row.venda_entrada)
+    fd.vagasFechadas += safeNum(row.vagas_fechadas)
+    fd.selfServiceQtd += safeNum(row.self_service_qtd)
+    fd.vendedorQtd += safeNum(row.vendedor_qtd)
     if (row.vendedor && row.vendedor.trim() && row.vendedor !== 'NULL') {
-      fd.sellers.push({ nome: row.vendedor, vendas: safeNum(row.vendas_do_vendedor) })
+      const existing = fd.sellers.find((s) => s.nome === row.vendedor)
+      if (existing) {
+        existing.vendas += safeNum(row.vendas_do_vendedor)
+      } else {
+        fd.sellers.push({ nome: row.vendedor, vendas: safeNum(row.vendas_do_vendedor) })
+      }
     }
   })
   const funnels = Array.from(funnelMap.values())
+  funnels.forEach((f) => {
+    const total = f.selfServiceQtd + f.vendedorQtd
+    f.selfServicePct = total > 0 ? (f.selfServiceQtd / total) * 100 : 0
+    f.vendedorPct = total > 0 ? (f.vendedorQtd / total) * 100 : 0
+  })
+  const vagasFechadasByFunil = new Map<string, number>()
+  vagasFechadas.forEach((v) => {
+    const fn = v.funil || 'Unknown'
+    vagasFechadasByFunil.set(fn, (vagasFechadasByFunil.get(fn) || 0) + 1)
+  })
+  funnels.forEach((f) => {
+    const fNorm = normalizeFunil(f.nome)
+    let count = 0
+    vagasFechadasByFunil.forEach((v, k) => {
+      if (normalizeFunil(k) === fNorm) count += v
+    })
+    if (count > 0 || vagasFechadas.length > 0) f.vagasFechadas = count
+  })
 
   let parcelado = 0,
     aVista = 0,

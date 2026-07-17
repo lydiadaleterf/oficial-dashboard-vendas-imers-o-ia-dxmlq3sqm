@@ -65,7 +65,10 @@ export default function Index() {
   const [selectedFunnels, setSelectedFunnels] = useState<string[]>([])
   const [dateRange, setDateRange] = useState<DateRange>(getDefaultDateRange)
   const [activePeriod, setActivePeriod] = useState<QuickPeriod>('7d')
-  const { data, loading, refreshing, error, refresh } = useDashboardData(selectedFunnels, dateRange)
+  const { data, loading, refreshing, filtering, error, refresh } = useDashboardData(
+    selectedFunnels,
+    dateRange,
+  )
   const [drillDownType, setDrillDownType] = useState<DrillDownType | null>(null)
 
   if (authLoading) {
@@ -89,7 +92,12 @@ export default function Index() {
   }
 
   return (
-    <div className="space-y-2 p-4 md:p-6 max-w-7xl mx-auto">
+    <div
+      className={cn(
+        'space-y-2 p-4 md:p-6 max-w-7xl mx-auto transition-opacity duration-300',
+        filtering && 'opacity-60',
+      )}
+    >
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <div>
           <h1 className="text-xl md:text-2xl font-bold text-slate-800">
