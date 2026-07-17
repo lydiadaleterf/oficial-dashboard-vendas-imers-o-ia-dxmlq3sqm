@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Navigate } from 'react-router-dom'
-import { subDays, format } from 'date-fns'
 import { useAuth } from '@/hooks/use-auth'
 import { useDashboardData } from '@/hooks/use-dashboard-data'
 import { FunnelFilter } from '@/components/dashboard/FunnelFilter'
@@ -12,6 +11,7 @@ import {
 import { KPICards } from '@/components/dashboard/KPICards'
 import { FunnelSection } from '@/components/dashboard/FunnelSection'
 import { ChartsSection } from '@/components/dashboard/ChartsSection'
+import { GeoSellerSection } from '@/components/dashboard/GeoSellerSection'
 import { TablesSection } from '@/components/dashboard/TablesSection'
 import { DrillDownDialog } from '@/components/dashboard/DrillDownDialog'
 import { DrillDownType } from '@/services/drill-down'
@@ -19,12 +19,6 @@ import { RefreshCw, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
-
-function getDefaultDateRange(): DateRange {
-  const today = new Date()
-  const start = subDays(today, 7)
-  return { startDate: format(start, 'yyyy-MM-dd'), endDate: format(today, 'yyyy-MM-dd') }
-}
 
 function LoadingSkeleton() {
   return (
@@ -63,8 +57,8 @@ function ErrorState({ error, onRetry }: { error: string | null; onRetry: () => v
 export default function Index() {
   const { user, loading: authLoading } = useAuth()
   const [selectedFunnels, setSelectedFunnels] = useState<string[]>([])
-  const [dateRange, setDateRange] = useState<DateRange>(getDefaultDateRange)
-  const [activePeriod, setActivePeriod] = useState<QuickPeriod>('7d')
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
+  const [activePeriod, setActivePeriod] = useState<QuickPeriod>('all')
   const { data, loading, refreshing, filtering, error, refresh } = useDashboardData(
     selectedFunnels,
     dateRange,
@@ -144,7 +138,9 @@ export default function Index() {
             filtering={filtering}
           />
 
-          <ChartsSection data={data.chartData} geoData={data.geoData} />
+          <ChartsSection data={data.chartData} />
+
+          <GeoSellerSection geoData={data.geoData} sellerDailyData={data.sellerDailyData} />
 
           <TablesSection data={data} />
 

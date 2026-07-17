@@ -91,14 +91,7 @@ export function ScorecardCards({ data, items }: ScorecardCardsProps) {
           key={key}
           className="shadow-subtle border-slate-200 animate-fade-in-up"
           style={{ animationDelay: `${idx * 50}ms` }}
-        >
-          <CardContent className="p-4">
-            <p className="text-sm font-medium text-slate-500 mb-1">{prettyLabel(key)}</p>
-            <p className="text-2xl font-bold tracking-tight text-slate-800">
-              {formatFieldValue(key, value)}
-            </p>
-          </CardContent>
-        </Card>
+        ></Card>
       ))}
     </div>
   )

@@ -136,6 +136,32 @@ export function processDashboardData(
     a.dia.localeCompare(b.dia),
   )
 
+  // Compute daily revenue from "Entrada" oferta transactions (deduplicated)
+  const dailyRevenueMap = new Map<string, number>()
+  const seenRevenueDedupeKeys = new Set<string>()
+  transacoes.forEach((row) => {
+    if (!isEntradaOffer(row.oferta)) return
+    const status = (row.status || '').toLowerCase()
+    if (isRefundStatus(status)) return
+    if (!isVagaFechada(row.is_vaga_fechada)) return
+    const date = parseDate(row.data_compra)
+    if (!date) return
+    const dk = getDedupeKey(row)
+    if (dk !== '' && seenRevenueDedupeKeys.has(dk)) return
+    if (dk) seenRevenueDedupeKeys.add(dk)
+    dailyRevenueMap.set(date, (dailyRevenueMap.get(date) || 0) + safeNum(row.valor_pago))
+  })
+  chartData.forEach((d) => {
+    d.receita_fechada = dailyRevenueMap.get(d.dia) || 0
+  })
+  const chartDates = new Set(chartData.map((d) => d.dia))
+  dailyRevenueMap.forEach((valor, dia) => {
+    if (!chartDates.has(dia)) {
+      chartData.push({ dia, entradas_realizadas: 0, vagas_fechadas: 0, receita_fechada: valor })
+    }
+  })
+  chartData.sort((a, b) => a.dia.localeCompare(b.dia))
+
   // Deduplicate vagasFechadas by email — one vaga per person.
   const vagasFechadasSeenEmails = new Set<string>()
   const dedupedVagasFechadas = vagasFechadas.filter((v) => {
@@ -363,19 +389,11 @@ export function processDashboardData(
     if (a.dia !== b.dia) return b.dia.localeCompare(a.dia)
     return b.vendas - a.vendas
   })
-  const approvedSellerMap = new Map<string, number>()
-  const seenSellerKeys = new Set<string>()
-  transacoes.forEach((t) => {
-    if ((t.status || '').toLowerCase() !== 'approved') return
-    if (!isEntradaOffer(t.oferta)) return
-    const vendedor = (t.vendedor || '').toString().trim()
-    if (!vendedor || vendedor === 'NULL') return
-    const dk = getDedupeKey(t)
-    if (dk !== '' && seenSellerKeys.has(dk)) return
-    if (dk) seenSellerKeys.add(dk)
-    approvedSellerMap.set(vendedor, (approvedSellerMap.get(vendedor) || 0) + 1)
-  })
-  const sellerRanking: SellerRankingEntry[] = Array.from(approvedSellerMap.entries())
+  const sellerMap = new Map<string, number>()
+  sellerDailyData.forEach((e) =>
+    sellerMap.set(e.vendedor, (sellerMap.get(e.vendedor) || 0) + e.vendas),
+  )
+  const sellerRanking: SellerRankingEntry[] = Array.from(sellerMap.entries())
     .map(([vendedor, totalVendas]) => ({ vendedor, totalVendas }))
     .sort((a, b) => b.totalVendas - a.totalVendas)
 

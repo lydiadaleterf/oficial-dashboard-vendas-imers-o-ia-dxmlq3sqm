@@ -1,4 +1,8 @@
 import { supabase } from '@/lib/supabase/client'
+import { mapStageIdToName } from '@/lib/stage-mapping'
+import type { DateRange } from '@/services/dashboard'
+
+export type { DateRange }
 
 export interface AdaptaLead {
   deal_id: string
@@ -35,15 +39,36 @@ export interface AdaptaNativeData {
 function aggregateLeads(leads: AdaptaLead[], field: keyof AdaptaLead): LeadDistributionItem[] {
   const map = new Map<string, number>()
   leads.forEach((lead) => {
-    const val = (lead[field] as string) || 'Não informado'
-    map.set(val, (map.get(val) || 0) + 1)
+    const rawVal = (lead[field] as string) || ''
+    const label = field === 'dealstage' ? mapStageIdToName(rawVal) : rawVal || 'Não informado'
+    map.set(label, (map.get(label) || 0) + 1)
   })
   return Array.from(map.entries())
     .map(([label, count]) => ({ label, count }))
     .sort((a, b) => b.count - a.count)
 }
 
-export async function fetchAdaptaNativeData(): Promise<AdaptaNativeData> {
+function filterLeadsByDate(leads: AdaptaLead[], dateRange?: DateRange): AdaptaLead[] {
+  if (!dateRange) return leads
+  const { startDate, endDate } = dateRange
+  return leads.filter((lead) => {
+    if (!lead.data_criacao) return false
+    const leadDate = lead.data_criacao.slice(0, 10)
+    return leadDate >= startDate && leadDate <= endDate
+  })
+}
+
+function filterSalesByDate(sales: AdaptaDailySales[], dateRange?: DateRange): AdaptaDailySales[] {
+  if (!dateRange) return sales
+  const { startDate, endDate } = dateRange
+  return sales.filter((sale) => {
+    if (!sale.dia) return false
+    const saleDate = sale.dia.slice(0, 10)
+    return saleDate >= startDate && saleDate <= endDate
+  })
+}
+
+export async function fetchAdaptaNativeData(dateRange?: DateRange): Promise<AdaptaNativeData> {
   const [leadsRes, salesRes] = await Promise.all([
     (supabase as any).from('adapta_case_leads_hubspot').select('*'),
     (supabase as any)
@@ -52,8 +77,11 @@ export async function fetchAdaptaNativeData(): Promise<AdaptaNativeData> {
       .order('dia', { ascending: true }),
   ])
 
-  const leads: AdaptaLead[] = leadsRes.data || []
-  const dailySales: AdaptaDailySales[] = salesRes.data || []
+  const allLeads: AdaptaLead[] = leadsRes.data || []
+  const allSales: AdaptaDailySales[] = salesRes.data || []
+
+  const leads = filterLeadsByDate(allLeads, dateRange)
+  const dailySales = filterSalesByDate(allSales, dateRange)
 
   return {
     totalLeads: leads.length,

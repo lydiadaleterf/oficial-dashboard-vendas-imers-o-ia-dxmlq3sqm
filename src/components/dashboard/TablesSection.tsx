@@ -10,7 +10,6 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { DashboardData } from '@/services/dashboard'
 import { ExternalLink, AlertCircle, Clock } from 'lucide-react'
-import { SellerRanking } from '@/components/dashboard/SellerRanking'
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
@@ -108,8 +107,8 @@ export function TablesSection({ data }: TablesSectionProps) {
               Não Agendou
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-0 flex-1 overflow-hidden">
-            <div className="max-h-[300px] overflow-auto bg-amber-50/20">
+          <CardContent className="p-0 flex-1 flex flex-col min-h-0">
+            <div className="flex-1 overflow-y-auto bg-amber-50/20 max-h-[400px]">
               <Table>
                 <TableBody>
                   {data.agendamentosPendentes.length > 0 ? (
@@ -133,10 +132,8 @@ export function TablesSection({ data }: TablesSectionProps) {
                 </TableBody>
               </Table>
             </div>
-          </CardContent>
+          </CardContent>{' '}
         </Card>
-
-        <SellerRanking data={data.sellerRanking} />
       </div>
     </div>
   )
