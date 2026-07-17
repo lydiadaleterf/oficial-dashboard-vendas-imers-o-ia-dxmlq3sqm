@@ -318,7 +318,8 @@ export function processDashboardData(
       const fn = a.funil || 'Unknown'
       scheduledByFunil.set(fn, (scheduledByFunil.get(fn) || 0) + 1)
     }
-  })  funnels.forEach((f) => {
+  })
+  funnels.forEach((f) => {
     const fNorm = normalizeFunil(f.nome)
     let scheduled = 0
     scheduledByFunil.forEach((count, k) => {
@@ -331,7 +332,8 @@ export function processDashboardData(
   dedupedVagasFechadas.forEach((v) => {
     const email = (v.email || '').toString().trim().toLowerCase()
     if (email) closedEmails.add(email)
-  })  const entradasPendentesSeenEmails = new Set<string>()
+  })
+  const entradasPendentesSeenEmails = new Set<string>()
   const entradasPendentesFiltered = entradasSemVaga.filter((e) => {
     const email = (e.email || '').toString().trim().toLowerCase()
     if (closedEmails.has(email)) return false
